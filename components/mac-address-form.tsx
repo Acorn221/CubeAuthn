@@ -1,0 +1,117 @@
+import * as React from "react"
+import { useState } from "react"
+import { useStorage } from "@plasmohq/storage/hook"
+
+import { Button } from "./ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Input } from "./ui/input"
+import { Label } from "./ui/label"
+
+interface MacAddressFormProps {
+  onCancel?: () => void;
+}
+
+export function MacAddressForm({ onCancel }: MacAddressFormProps) {
+  const [macAddress, setMacAddress] = useStorage('macAddress', (x: string | undefined) =>
+    x === undefined ? "" : x,
+  );
+  const [inputValue, setInputValue] = useState<string>("");
+  const [isValid, setIsValid] = useState<boolean>(true);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const isEditing = macAddress !== "";
+
+  // MAC address regex pattern (accepts formats like XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
+  const macAddressPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+
+  React.useEffect(() => {
+    // Initialize input value with stored MAC address
+    setInputValue(macAddress);
+    // Validate the initial value
+    setIsValid(macAddress === "" || macAddressPattern.test(macAddress));
+  }, [macAddress]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    setIsValid(value === "" || macAddressPattern.test(value));
+    setIsSaved(false);
+  };
+
+  const handleSave = () => {
+    if (isValid && inputValue !== "") {
+      setMacAddress(inputValue);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000); // Hide success message after 3 seconds
+    }
+  };
+
+  return (
+    <Card className="w-[300px] border-border shadow-lg">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-xl">Rubik's Cube WebAuthn</CardTitle>
+        <CardDescription className="text-muted-foreground">
+          {isEditing 
+            ? "Change the MAC address of your Bluetooth Rubik's cube"
+            : "Enter the MAC address of your Bluetooth Rubik's cube to use for WebAuthn authentication"
+          }
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid w-full items-center gap-4">
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="macAddress" className="text-foreground">Cube MAC Address</Label>
+            <Input 
+              id="macAddress" 
+              placeholder="XX:XX:XX:XX:XX:XX" 
+              value={inputValue}
+              onChange={handleInputChange}
+              className={isValid ? "border-input" : "border-destructive"}
+            />
+            {!isValid && (
+              <p className="text-destructive text-xs mt-1">
+                Please enter a valid MAC address (format: XX:XX:XX:XX:XX:XX)
+              </p>
+            )}
+          </div>
+        </div>
+        {isSaved && (
+          <p className="text-green-500 text-xs mt-3 font-medium">
+            ✓ MAC address saved successfully!
+          </p>
+        )}
+      </CardContent>
+      <CardFooter className={`flex ${onCancel ? "justify-between" : "justify-end"} gap-2`}>
+        {onCancel && (
+          <Button
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        )}
+        <Button
+          onClick={handleSave}
+          disabled={!isValid || inputValue === ""}
+          className={onCancel ? "" : "w-full"}
+        >
+          {isEditing ? "Update MAC Address" : "Save MAC Address"}
+        </Button>
+      </CardFooter>
+      <div className="p-3 mx-4 mb-4 bg-muted rounded-md">
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          <span className="font-semibold text-foreground">Note:</span> Go to <code>chrome://bluetooth-internals/#devices</code> to get the MAC address. You may have to connect the cube to your computer first to get the MAC address and there may be multiple GANXXX devices listed so try both.
+          {/* LINK TO GITHUB PAGES https://acorn221.github.io/gan-i3-356-bluetooth/  */}
+          <a href="https://acorn221.github.io/gan-i3-356-bluetooth/" target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="link"
+              className="text-xs mt-1"
+              rel="noopener noreferrer"
+            >
+              Bluetooth connection page
+            </Button>
+          </a>
+        </p>
+      </div>
+    </Card>
+  )
+}
