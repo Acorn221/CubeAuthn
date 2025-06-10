@@ -1,8 +1,8 @@
 import * as React from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 
-import { Button } from "./ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Button } from "~/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
 
 interface MainViewProps {
   onEditMacAddress: () => void

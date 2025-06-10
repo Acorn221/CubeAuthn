@@ -10,13 +10,13 @@
   ],
   "compilerOptions": {
     "paths": {
-      "~*": [
+      "~/*": [
         "./*"
       ],
-      "@/": [
+      "@/*": [
         "./src/*"
       ]
     },
-    "baseUrl": "src/"
+    "baseUrl": "."
   }
 }

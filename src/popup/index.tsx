@@ -1,10 +1,10 @@
-import "./styles.css"
+import "@/popup/styles.css"
 import { useStorage } from "@plasmohq/storage/hook"
-import { MacAddressForm } from "../../components/mac-address-form"
-import { MainView } from "../../components/main-view"
-import { ShadcnShowcase } from "../../components/shadcn-showcase"
+import { MacAddressForm } from "~/components/mac-address-form"
+import { MainView } from "~/components/main-view"
+import { ShadcnShowcase } from "~/components/shadcn-showcase"
 import { useState, useEffect } from "react"
-import { Button } from "../../components/ui/button"
+import { Button } from "~/components/ui/button"
 
 const Popup = () => {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
