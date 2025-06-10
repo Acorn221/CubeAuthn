@@ -5,15 +5,19 @@
   ],
   "include": [
     ".plasmo/index.d.ts",
-    "./**/*.ts",
-    "./**/*.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "cube-dist/**.ts"
   ],
   "compilerOptions": {
     "paths": {
       "~*": [
         "./*"
+      ],
+      "@": [
+        "./src/*"
       ]
     },
-    "baseUrl": "."
+    "baseUrl": "src/"
   }
 }
