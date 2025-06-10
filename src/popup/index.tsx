@@ -25,7 +25,7 @@ const Popup = () => {
   }, [macAddress])
 
   return (
-    <div className="p-4 font-sans bg-background text-foreground min-h-[400px]">
+    <div className="p-4 font-sans bg-background text-foreground">
       {currentView === 'showcase' && (
         <>
           <Button
