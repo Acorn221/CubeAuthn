@@ -3,15 +3,17 @@ import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { ports } from ".."
 
 export type HandleRegisterRequest = {
-  challenge: string
-  url: string
+  publicKey: CredentialCreationOptions["publicKey"];
+  url: string;
 }
 
 export type HandleRegisterResponse = {
-  credential: any
-  success: boolean
-  error?: string
+  credential: any;
+  success: boolean;
+  error?: string;
 }
+
+// TODO: NEED TO FIX THIS ERROR: "Error: No connections found for target: {\"url\":\"https://webauthn.io/\"}"
 
 const handler: PlasmoMessaging.MessageHandler<
   HandleRegisterRequest,

@@ -318,6 +318,12 @@ export class PortManager<
   }
 
   private matchesFilter(conn: PortConnection, filter: Partial<TargetOptions>): boolean {
+    console.log({
+      filter,
+      tabId: conn.tabId,
+      url: conn.url,
+      portName: conn.portName
+    })
     if ('tabId' in filter && filter.tabId !== conn.tabId) return false;
     if ('url' in filter && filter.url !== conn.url) return false;
     if ('urlPattern' in filter && filter.urlPattern && !conn.url?.includes(filter.urlPattern)) return false;
