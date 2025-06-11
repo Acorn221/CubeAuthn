@@ -41,6 +41,9 @@ importers:
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
+      sr-visualizer:
+        specifier: ^1.0.13
+        version: 1.0.13
       tailwind-merge:
         specifier: 3.0.1
         version: 3.0.1
@@ -3095,6 +3098,9 @@ packages:
     resolution: {integrity: sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==}
     engines: {node: '>= 8'}
 
+  sr-visualizer@1.0.13:
+    resolution: {integrity: sha512-6/tivRwEttzIegF7jxtGBLpaQrYaBGNOmIpSGgp/9zYIH91rEGcpUG/TkmBqlqtxbWt6WF4y8cieUXE4V9F/Sw==}
+
   srcset@4.0.0:
     resolution: {integrity: sha512-wvLeHgcVHKO8Sc/H/5lkGreJQVeYMm9rlmt8PuR1xE31rIuXhuzznUUqAt8MqLhB3MqJdFzlNAfpcWnxiFUcPw==}
     engines: {node: '>=12'}
@@ -3146,6 +3152,9 @@ packages:
 
   svg-parser@2.0.4:
     resolution: {integrity: sha512-e4hG1hRwoOdRb37cIMSgzNsxyzKfayW6VOflrwvR+/bzrkyxY/31WkbgnQpgtrNp1SdpJvpUAGTa/ZoiPNDuRQ==}
+
+  svg.js@2.7.1:
+    resolution: {integrity: sha512-ycbxpizEQktk3FYvn/8BH+6/EuWXg7ZpQREJvgacqn46gIddG24tNNe4Son6omdXCnSOaApnpZw6MPCBA1dODA==}
 
   svgo@2.8.0:
     resolution: {integrity: sha512-+N/Q9kV1+F+UeWYoSiULYo4xYSDQlTgb+ayMobAXPwMnLvop7oxKMo9OzIrX5x3eS4L4f2UHhc9axXwY8DpChg==}
@@ -6551,6 +6560,10 @@ snapshots:
     dependencies:
       whatwg-url: 7.1.0
 
+  sr-visualizer@1.0.13:
+    dependencies:
+      svg.js: 2.7.1
+
   srcset@4.0.0: {}
 
   stable@0.1.8: {}
@@ -6612,6 +6625,8 @@ snapshots:
       periscopic: 3.1.0
 
   svg-parser@2.0.4: {}
+
+  svg.js@2.7.1: {}
 
   svgo@2.8.0:
     dependencies:

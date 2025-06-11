@@ -29,8 +29,14 @@
   }
 }
 
-
 #plasmo-shadow-container {
   all: initial;
   box-sizing: border-box;
+}
+
+.cube-container svg {
+	width: 100% !important;
+	height: auto !important;
+	max-width: 100%;
+	max-height: 100%;
 }
