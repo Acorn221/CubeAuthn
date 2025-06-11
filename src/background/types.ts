@@ -20,8 +20,12 @@ export interface OutboundMessages {
 		request: { message: string; type: 'info' | 'error' };
 		response: { acknowledged: boolean };
 	};
-	getCubeStateNumber: {
+	connectCube: {
 		request: {},
-		response: { num: string } // using string bc it's a big number
-	}
+		response: { result: boolean } // using string bc it's a big number
+	};
+	getCubeStateNumber: {
+		request: {};
+		response: { num: string }; // using string bc it's a big number
+	};
 }

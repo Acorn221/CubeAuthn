@@ -29,14 +29,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background font-sans text-foreground antialiased;
-  }
-}
 
 #plasmo-shadow-container {
   all: initial;
