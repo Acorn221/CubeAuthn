@@ -99,7 +99,7 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
       </CardFooter>
       <div className="p-3 mx-4 mb-4 bg-muted rounded-md">
         <p className="text-xs leading-relaxed text-muted-foreground">
-          <span className="font-semibold text-foreground">Note:</span> Go to <code>chrome://bluetooth-internals/#devices</code> to get the MAC address. You may have to connect the cube to your computer first to get the MAC address and there may be multiple GANXXX devices listed so try both.
+          <span className="font-semibold text-foreground">Note:</span> Go to <pre>chrome://bluetooth-internals</pre> to get the MAC address. You may have to connect the cube to your computer first to get the MAC address and there may be multiple GANXXX devices listed so try both.
           {/* LINK TO GITHUB PAGES https://acorn221.github.io/gan-i3-356-bluetooth/  */}
           <a href="https://acorn221.github.io/gan-i3-356-bluetooth/" target="_blank" rel="noopener noreferrer">
             <Button
@@ -107,7 +107,7 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
               className="text-xs mt-1"
               rel="noopener noreferrer"
             >
-              Bluetooth connection page
+              Example bluetooth connection page
             </Button>
           </a>
         </p>

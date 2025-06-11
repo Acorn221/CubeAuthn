@@ -2,8 +2,16 @@ This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with
 
 ## Getting Started
 
-First, run the development server:
-
+Generate a `CRX_ID` and `PRIVATE_KEY` [here](https://www.plasmo.com/blog/posts/how-to-create-a-consistent-id-for-your-chrome-extension) then create a `.env` file in the root of the project with those IDs, like:
+```env
+CRX_ID=your_crx_id
+PRIVATE_KEY=your_private_key
+```
+Then, install the dependencies using 
+```bash
+pnpm i
+```
+And the run dev server using:
 ```bash
 pnpm dev
 # or
