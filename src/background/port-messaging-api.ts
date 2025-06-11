@@ -30,10 +30,12 @@ export interface BaseMessage {
  * }
  * ```
  */
-export type MessageDefinitions = Record<string, {
-  request: any;
-  response: any;
-}>;
+export type MessageDefinitions = {
+	[key: string]: {
+		request: any;
+		response: any;
+	};
+}
 
 /**
  * Options for targeting specific connections when sending messages.
