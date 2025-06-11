@@ -9,10 +9,6 @@ export interface InboundMessages {
 		request: { id: string };
 		response: { data: string[] };
 	};
-	ping: {
-		request: {};
-		response: { pong: boolean };
-	};
 }
 
 export interface OutboundMessages {
@@ -24,4 +20,8 @@ export interface OutboundMessages {
 		request: { message: string; type: 'info' | 'error' };
 		response: { acknowledged: boolean };
 	};
+	getCubeStateNumber: {
+		request: {},
+		response: { num: string } // using string bc it's a big number
+	}
 }

@@ -1,9 +1,9 @@
 import type { PlasmoMessaging } from '@plasmohq/messaging';
-import { sendToContentScript } from "@plasmohq/messaging";
+import { ports } from '..';
 
 export type HandleRegisterRequest = {
   challenge: string;
-  options: any;
+  url: string;
 };
 
 export type HandleRegisterResponse = {
@@ -18,23 +18,20 @@ const handler: PlasmoMessaging.MessageHandler<
 > = async (req, res) => {
   try {
     // Get the current cube state
-    const cubeStateResponse = await sendToContentScript({
-      name: "getCubeState"
-    });
-    
-    if (!cubeStateResponse.connected) {
-      throw new Error("Cube is not connected");
+    const res = await ports.sendToTarget(
+      'getCubeStateNumber',
+      {},
+      {
+      url: req.body.url,
+      }, true)
+    if (!res) {
+      throw new Error("No response :(");
     }
     
-    const cubeState = cubeStateResponse.state;
-    console.log("Using cube state for registration:", cubeState);
+    const { num } = res;
+    console.log("Using cube state for registration:", num);
     
-    // Modify the registration challenge based on the cube state
-    // This is where you would implement your custom logic to incorporate
-    // the cube state into the WebAuthn registration process
-    
-    // For now, we'll just pass through the original request
-    // In a real implementation, you would modify the challenge or other parameters
+    // TODO: from the challenge and cube num, generate the webauthn shizz
     
     res.send({
       credential: req.body.options,

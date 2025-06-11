@@ -210,9 +210,9 @@ export class PortManager<
     throwIfNoMessages: boolean = false
   ): void {
     if(throwIfNoMessages) {
-      this.sendToTarget({}, messageType, payload);
+      this.sendToTarget(messageType, payload, {});
     } else {
-      this.sendToTarget({}, messageType, payload).catch(() => {});
+      this.sendToTarget(messageType, payload, {}).catch(() => {});
     }
   }
 
@@ -327,9 +327,9 @@ export class PortManager<
 
   // Internal send method
   async sendToTarget<K extends keyof TOutbound>(
-    target: TargetOptions,
     messageType: K,
     payload: TOutbound[K]['request'],
+    target: TargetOptions,
     awaitResponse?: boolean
   ): Promise<TOutbound[K]['response'] | void> {
     const matchingConnections = this.getMatchingConnections(target);
@@ -400,9 +400,9 @@ class MessageBuilder<T extends MessageDefinitions, K extends keyof T> {
   to(target: TargetOptions, awaitResponse: true): Promise<T[K]['response']>;
   to(target: TargetOptions, awaitResponse?: boolean): void | Promise<T[K]['response']> {
     if (awaitResponse) {
-      return this.manager['sendToTarget'](target, this.messageType, this.payload, true) as Promise<T[K]['response']>;
+      return this.manager['sendToTarget'](this.messageType, this.payload, target, true) as Promise<T[K]['response']>;
     } else {
-      this.manager['sendToTarget'](target, this.messageType, this.payload, false);
+      this.manager['sendToTarget'](this.messageType, this.payload, target, false);
     }
   }
 }
