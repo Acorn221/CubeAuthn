@@ -1,6 +1,6 @@
 import type { MessageDefinitions } from "./port-messaging-api";
 
-export interface InboundMessages extends MessageDefinitions {
+export interface InboundMessages {
 	auth: {
 		request: { token: string };
 		response: { success: boolean; user?: string };
@@ -15,7 +15,7 @@ export interface InboundMessages extends MessageDefinitions {
 	};
 }
 
-export interface OutboundMessages extends MessageDefinitions {
+export interface OutboundMessages {
 	updateSettings: {
 		request: { theme: 'dark' | 'light' };
 		response: { applied: boolean };
