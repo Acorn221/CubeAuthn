@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       gan-i3-356-bluetooth:
-        specifier: github:Acorn221/gan-i3-356-bluetooth#dist
-        version: https://codeload.github.com/Acorn221/gan-i3-356-bluetooth/tar.gz/c0353da1994e196e25c5720fab6769b89f89c461
+        specifier: ^0.0.4
+        version: 0.0.4
       lucide-react:
         specifier: 0.474.0
         version: 0.474.0(react@18.2.0)
@@ -2113,9 +2113,8 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  gan-i3-356-bluetooth@https://codeload.github.com/Acorn221/gan-i3-356-bluetooth/tar.gz/c0353da1994e196e25c5720fab6769b89f89c461:
-    resolution: {tarball: https://codeload.github.com/Acorn221/gan-i3-356-bluetooth/tar.gz/c0353da1994e196e25c5720fab6769b89f89c461}
-    version: 0.0.3
+  gan-i3-356-bluetooth@0.0.4:
+    resolution: {integrity: sha512-529w9BpqbIHx53sTi3qwL/Whj9kM8q6wjU4/LVzdW1/MSe1trHT+MeuoRf9V7TN8y1AL4e8jSnXYFGZlLj3EDg==}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -5649,7 +5648,7 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  gan-i3-356-bluetooth@https://codeload.github.com/Acorn221/gan-i3-356-bluetooth/tar.gz/c0353da1994e196e25c5720fab6769b89f89c461:
+  gan-i3-356-bluetooth@0.0.4:
     dependencies:
       lz-string: 1.5.0
 

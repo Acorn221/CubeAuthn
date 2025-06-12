@@ -1,0 +1,40 @@
+import { useEffect } from "react";
+import { initPortClient } from "@/contents-helpers/port-messaging";
+import Dialog from "@/contents-helpers/dialog";
+import cssText from "data-text:~/contents/style.css"
+import type { PlasmoCSConfig } from "plasmo";
+
+export const config: PlasmoCSConfig = {
+  matches: ["https://webauthn.io/*"],
+  run_at: "document_start",
+}
+const styleElement = document.createElement("style")
+
+export const getStyle = (): HTMLStyleElement => {
+  const baseFontSize = 16
+
+  let updatedCssText = cssText.replaceAll(":root", ":host(plasmo-csui)")
+  const remRegex = /([\d.]+)rem/g
+  updatedCssText = updatedCssText.replace(remRegex, (match, remValue) => {
+    const pixelsValue = parseFloat(remValue) * baseFontSize
+
+    return `${pixelsValue}px`
+  })
+
+  styleElement.textContent = updatedCssText
+
+  return styleElement
+}
+
+const Root = () => {
+  // Initialize the port client when the component mounts
+  useEffect(() => {
+    initPortClient({ timeout: 1000 * 60 * 15 }).catch(error => {
+      console.error("Failed to initialize port client in UI component:", error);
+    });
+  }, []);
+
+  return <Dialog />;
+};
+
+export default Root;

@@ -1,29 +1,52 @@
 import type { InboundMessages, OutboundMessages } from "@/background/types";
-import { PortClient } from "./port-messaging-cs-api";
+import { 
+  initPortClient, 
+  getPortClient, 
+  disconnectPortClient,
+  onPortClientChange,
+  usePortClient,
+  useSendMessage,
+  useMessageHandler,
+  type PortClientConfig
+} from "./hooks";
 
-// @ts-expect-error Create manager with separate inbound/outbound types (complains about types - is fine)
-const client = new PortClient<OutboundMessages, InboundMessages>();
-await client.connect();
+// Export all the functions and types
+export {
+  initPortClient,
+  getPortClient,
+  disconnectPortClient,
+  onPortClientChange,
+  usePortClient,
+  useSendMessage,
+  useMessageHandler,
+  type PortClientConfig
+};
 
-// Type safety demonstration:
-// Valid message types for send: 'auth' | 'getData' | 'ping'
-// Valid message types for on: 'updateSettings' | 'notify'
+// Initialize the port client as early as possible
+// This allows non-React code to use the port client
+// We don't await this promise to avoid blocking, but we catch any errors
+initPortClient().catch(error => {
+  console.error('Failed to initialize port client:', error);
+});
 
-// These commented lines would cause TypeScript errors if uncommented:
+// Example of direct usage without hooks:
 /*
-// Type '"invalidType"' is not assignable to parameter of type '"auth" | "getData" | "ping"'
-client.send('invalidType' as any, { });
-*/
+// Send a message
+try {
+  const client = getPortClient();
+  const result = await client.send('auth', { token: 'xyz' });
+  console.log(result);
+} catch (error) {
+  console.error('Error sending message:', error);
+}
 
-// Type '"invalidType"' is not assignable to parameter of type '"updateSettings" | "notify"'
-client.on('notify', async (payload) => {
-  
+// Register a message handler
+const client = getPortClient();
+const unsubscribe = client.on('notify', async (payload) => {
+  console.log('Received notification:', payload);
   return { acknowledged: true };
 });
 
-// These will work correctly:
-client.on('updateSettings', async (payload) => {  // ✅ payload is typed as { theme: 'dark' | 'light' }
-  return { applied: true };  // ✅ return type matches expected response
-});
-
-const result = await client.send('auth', { token: 'xyz' });  // ✅ result is typed as { success: boolean; user?: string }
+// Later, unsubscribe
+unsubscribe();
+*/

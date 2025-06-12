@@ -7,21 +7,16 @@ import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
-import { Button } from "~/components/ui/button"
-import { Card } from "~/components/ui/card"
-import "./style.css"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
 import {
   useMessageHandler
-} from "@/contents-helpers/port-messaging/hooks"
-
-export const config: PlasmoCSConfig = {
-  matches: ["https://webauthn.io/*"],
-  run_at: "document_start"
-}
+} from "@/contents-helpers/port-messaging"
 
 const Dialog = () => {
-  const btCube = useRef(new BTCube())
+  const btCube = useRef(new BTCube());
+  const [isConnected, setIsConnected] = useState(false);
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   )
@@ -48,7 +43,11 @@ const Dialog = () => {
       .split("")
       .map((face) => colorMap[face] || face)
       .join("")
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    setIsConnected(btCube.current.isConnected())
+  }, [btCube.current.isConnected()]);
 
   useEffect(() => {
     if (frontCubeRef.current) {
@@ -84,7 +83,6 @@ const Dialog = () => {
         console.error("Failed to initialize Bluetooth Cube:", e)
       }
 
-      setShowAuthDialog(false)
       return { result }
     },
     [macAddress]
@@ -106,8 +104,11 @@ const Dialog = () => {
   // Handle authentication confirmation
   const handleAuthConfirm = async () => {
     try {
-      // Use the window.cubeAuth API to authenticate
-      // TODO: send back to the background script
+      // TODO: send THE CUBE NUMBER back to the background script
+      const cubeStateHex = btCube.current.getCube().getStateHex();
+      btCube.current.stop();
+
+      console.log("Cube state hex:", cubeStateHex);
     } catch (error) {
       console.error("Authentication error:", error)
     } finally {
@@ -121,14 +122,14 @@ const Dialog = () => {
       {/* Authentication Dialog */}
       {showAuthDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <Card className="w-96 p-6 bg-white rounded-lg shadow-lg flex flex-col">
+          <Card className="w-96 p-6 bg-black text-white rounded-lg shadow-lg flex flex-col font-sans gap-2">
             <h2 className="text-xl font-bold mb-4">Authentication Required</h2>
             <p className="mb-6">
               The website is requesting authentication using your Rubik's Cube.
               Please solve the cube pattern to authenticate.
             </p>
             <div>
-              Cube {btCube.current.isConnected() ? "Connected" : "Disconnected"}
+              Cube {isConnected ? "Connected" : "Disconnected"}
             </div>
 
             <div className="flex w-full cube-container">
@@ -138,10 +139,12 @@ const Dialog = () => {
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
-                onClick={() => setShowAuthDialog(false)}>
+                onClick={() => setShowAuthDialog(false)}
+                className="text-black"
+                >
                 Cancel
               </Button>
-              <Button onClick={handleAuthConfirm}>Authenticate</Button>
+              <Button className="bg-primary" onClick={handleAuthConfirm}>Authenticate</Button>
             </div>
           </Card>
         </div>
