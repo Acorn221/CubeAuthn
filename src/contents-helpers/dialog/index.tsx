@@ -12,7 +12,6 @@ import { Card } from "~/components/ui/card"
 import "./style.css"
 
 import {
-  PortClientProvider,
   useMessageHandler
 } from "@/contents-helpers/port-messaging/hooks"
 

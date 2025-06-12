@@ -1,5 +1,5 @@
 import { PortClientProvider } from "@/contents-helpers/port-messaging/hooks";
-import Dialog from "./dialog";
+import Dialog from "@/contents-helpers/dialog";
 
 const Root = () => {
   return (
