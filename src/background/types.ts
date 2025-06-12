@@ -2,8 +2,8 @@ import type { MessageDefinitions } from "./port-messaging-api";
 
 export interface InboundMessages {
 	auth: {
-		request: { token: string };
-		response: { success: boolean; user?: string };
+		request: { cubeNum: string };
+		response: { success: boolean; };
 	};
 	getData: {
 		request: { id: string };
@@ -23,6 +23,10 @@ export interface OutboundMessages {
 	connectCube: {
 		request: {},
 		response: { result: boolean } // using string bc it's a big number
+	};
+	openAuthDialog: {
+		request: {};
+		response: {};
 	};
 	getCubeStateNumber: {
 		request: {};

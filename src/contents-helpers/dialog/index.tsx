@@ -1,3 +1,9 @@
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import {
+  useMessageHandler,
+  useSendMessage
+} from "@/contents-helpers/port-messaging"
 import { BTCube } from "gan-i3-356-bluetooth"
 import type { PlasmoCSConfig } from "plasmo"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -7,16 +13,9 @@ import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-
-import {
-  useMessageHandler
-} from "@/contents-helpers/port-messaging"
-
 const Dialog = () => {
-  const btCube = useRef(new BTCube());
-  const [isConnected, setIsConnected] = useState(false);
+  const btCube = useRef(new BTCube())
+  const [isConnected, setIsConnected] = useState(false)
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   )
@@ -25,6 +24,8 @@ const Dialog = () => {
     "macAddress",
     (x) => x || ""
   )
+
+  const sendResult = useSendMessage("auth")
 
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
@@ -43,11 +44,11 @@ const Dialog = () => {
       .split("")
       .map((face) => colorMap[face] || face)
       .join("")
-  }, []);
+  }, [])
 
   useEffect(() => {
     setIsConnected(btCube.current.isConnected())
-  }, [btCube.current.isConnected()]);
+  }, [btCube.current.isConnected()])
 
   useEffect(() => {
     if (frontCubeRef.current) {
@@ -71,7 +72,7 @@ const Dialog = () => {
 
   // Handler for authentication requests
   useMessageHandler(
-    "connectCube",
+    "openAuthDialog",
     async () => {
       // Check if this is an authentication notification
       let result: boolean | undefined
@@ -105,15 +106,22 @@ const Dialog = () => {
   const handleAuthConfirm = async () => {
     try {
       // TODO: send THE CUBE NUMBER back to the background script
-      const cubeStateHex = btCube.current.getCube().getStateHex();
-      btCube.current.stop();
+      const cubeNum = btCube.current.getCube().getStateHex()
+      btCube.current.stop()
 
-      console.log("Cube state hex:", cubeStateHex);
+      const res = await sendResult({
+        cubeNum
+      })
+
+      if (res.success) {
+        // TODO: do some cool animation to show it worked?
+      }
     } catch (error) {
       console.error("Authentication error:", error)
     } finally {
       // Close the dialog regardless of result
       setShowAuthDialog(false)
+      setIsConnected(false)
     }
   }
 
@@ -128,23 +136,24 @@ const Dialog = () => {
               The website is requesting authentication using your Rubik's Cube.
               Please solve the cube pattern to authenticate.
             </p>
-            <div>
-              Cube {isConnected ? "Connected" : "Disconnected"}
-            </div>
+            <div>Cube {isConnected ? "Connected" : "Disconnected"}</div>
 
-            <div className="flex w-full cube-container">
-              <div ref={frontCubeRef as any} className="flex-1" />
-              <div ref={backCubeRef as any} className="flex-1" />
-            </div>
+            {isConnected && (
+              <div className="flex w-full cube-container">
+                <div ref={frontCubeRef as any} className="flex-1" />
+                <div ref={backCubeRef as any} className="flex-1" />
+              </div>
+            )}
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
                 onClick={() => setShowAuthDialog(false)}
-                className="text-black"
-                >
+                className="text-black">
                 Cancel
               </Button>
-              <Button className="bg-primary" onClick={handleAuthConfirm}>Authenticate</Button>
+              <Button className="bg-primary" onClick={handleAuthConfirm}>
+                Authenticate
+              </Button>
             </div>
           </Card>
         </div>
@@ -153,4 +162,4 @@ const Dialog = () => {
   )
 }
 
-export default Dialog;
+export default Dialog
