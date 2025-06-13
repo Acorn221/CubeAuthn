@@ -12,6 +12,41 @@ export const config: PlasmoCSConfig = {
 const originalCredentialCreate = navigator.credentials.create.bind(navigator.credentials);
 // const originalCredentialGet = navigator.credentials.get.bind(navigator.credentials);
 
+// Helper function to convert our credential format to a proper WebAuthn PublicKeyCredential
+function createWebAuthnCredential(credentialData: any): PublicKeyCredential {
+  // Create the credential object that matches the actual PublicKeyCredential interface
+  const credential = {
+    id: credentialData.id,
+    type: "public-key",
+    rawId: credentialData.rawId instanceof ArrayBuffer ? credentialData.rawId : credentialData.rawId.buffer,
+    authenticatorAttachment: null,
+    response: {
+      clientDataJSON: credentialData.response.clientDataJSON instanceof ArrayBuffer 
+        ? credentialData.response.clientDataJSON 
+        : credentialData.response.clientDataJSON.buffer,
+      // attestationObject: credentialData.response.attestationObject,
+    } satisfies AuthenticatorResponse,
+    
+    getClientExtensionResults(): AuthenticationExtensionsClientOutputs {
+      return {};
+    },
+    
+    toJSON() {
+      return {
+        id: credentialData.id,
+        rawId: credentialData.id,
+        type: "public-key",
+        response: {
+          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(this.response.clientDataJSON))),
+          attestationObject: btoa(String.fromCharCode(...new Uint8Array(credentialData.response.attestationObject))),
+        }
+      };
+    },
+  } satisfies PublicKeyCredential;
+
+  return credential;
+}
+
 // Create a proxy for the credentials.create method
 navigator.credentials.create = async function(options: CredentialCreationOptions): Promise<Credential | null> {
   console.log("WebAuthn credential creation intercepted", options);
@@ -19,26 +54,60 @@ navigator.credentials.create = async function(options: CredentialCreationOptions
   // Check if this is a WebAuthn request
   if (options?.publicKey) {
     console.log("Sending msg to background script for WebAuthn registration");
-    // TODO: send message to bgsw handleRegister
-    const res = await sendToBackgroundViaRelay<HandleRegisterRequest, HandleRegisterResponse>({
-      name: "handleRegister",
-      body: {
-        publicKey: options.publicKey,
-        url: window.location.href
-      }
-    });
+    
+    try {
+      const res = await sendToBackgroundViaRelay<HandleRegisterRequest, HandleRegisterResponse>({
+        name: "handleRegister",
+        body: {
+          publicKey: options.publicKey,
+          url: window.location.href
+        }
+      });
 
-    console.log("WebAuthn registration response:", res);
-    return null;
+      console.log("WebAuthn registration response:", res);
+      
+      // Handle the response
+      if (res.success && res.credential) {
+        console.log("Successfully created WebAuthn credential with cube state:", res.credential.cubeState);
+        
+        // Convert our credential data to a proper WebAuthn PublicKeyCredential
+        const webauthnCredential = createWebAuthnCredential(res.credential);
+        
+        return webauthnCredential;
+      } else {
+        // Handle error case
+        console.error("WebAuthn registration failed:", res.error);
+        
+        // Throw a proper WebAuthn error
+        const error = new DOMException(
+          res.error || "Registration failed",
+          "NotAllowedError"
+        );
+        throw error;
+      }
+      
+    } catch (error) {
+      console.error("Error during WebAuthn registration:", error);
+      
+      // Re-throw as a WebAuthn-compatible error
+      if (error instanceof DOMException) {
+        throw error;
+      } else {
+        throw new DOMException(
+          "An error occurred during registration",
+          "UnknownError"
+        );
+      }
+    }
   }
 
-  console.warn("No publicKey in options");
-  return null;
+  console.warn("No publicKey in options, falling back to original method");
   
-  // Call the original method
-  // return originalCredentialCreate(options);
+  // Fall back to original method for non-WebAuthn requests
+  return originalCredentialCreate(options);
 };
 
+console.log("WebAuthn content script loaded and credential.create method intercepted");
 // // Create a proxy for the credentials.get method
 // navigator.credentials.get = async function(options: CredentialRequestOptions): Promise<Credential | null> {
 //   console.log("WebAuthn credential request intercepted", options);

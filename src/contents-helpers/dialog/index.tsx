@@ -91,6 +91,7 @@ const Dialog = () => {
 
   useEffect(() => {
     const listener = (data) => {
+      setIsConnected(true)
       setFacelets(data.facelet as string)
     }
 
