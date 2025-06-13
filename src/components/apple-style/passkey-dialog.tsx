@@ -120,46 +120,52 @@ const PasskeyDialog: React.FC = () => {
   return (
     <>
       {showAuthDialog && (
-        <div className="fixed inset-0 apple-dialog-backdrop flex items-center justify-center z-[9999] apple-dialog">
-          <div className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden">
+        <div
+          className="fixed inset-0 apple-dialog-backdrop flex items-center justify-center z-[9999] apple-dialog"
+          onClick={() => setShowAuthDialog(false)}
+        >
+          <div
+            className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-4"
+            onClick={(e) => e.stopPropagation()} // Prevent clicks on the dialog from closing it
+          >
             {/* Header with Sign In text and Cancel button */}
-            <div className="relative pt-4 pb-2">
-              <div className="absolute left-4 top-4 flex items-center">
-                <UserLock size={16} />
-                <span className="text-sm font-medium ml-2">Sign In</span>
+            <div className="flex mx-4 cursor-default">
+              <div className="flex-1 top-4 flex items-center">
+                <UserLock className="size-6" />
+                <span className="text-md font-medium ml-2">Sign In</span>
               </div>
-              <div className="absolute right-4 top-4">
+              <div className="">
                 <button
                   onClick={() => setShowAuthDialog(false)}
-                  className="text-[#8e8e93] text-sm font-normal bg-transparent border-0 p-0 cursor-pointer"
+                  className="px-3 py-1 rounded-md bg-[#3a3a3c] text-white text-sm font-normal cursor-pointer"
                 >
                   Cancel
                 </button>
               </div>
             </div>
-            
+            <div className="w-full h-[1px] bg-[#3a3a3c] mb-2" />
             {/* Content */}
-            <div className="px-5 py-6 flex flex-col items-center">
+            <div className="px-4 flex flex-col items-center cursor-default">
               <div className="w-14 h-14 apple-dialog-icon-container flex items-center justify-center mb-4">
                 <RubiksCubeIcon className="w-14 h-14" />
               </div>
               
-              <h2 className="text-lg apple-dialog-title mb-1">Use Rubiks Cube to sign in?</h2>
+              <h2 className="text-lg apple-dialog-title mb-1">Use your Cube to sign in?</h2>
               
-              <p className="apple-dialog-description text-center text-xs mb-6">
-                A passkey for "m" will be saved in Passwords and available on all your devices.
+              <p className="apple-dialog-description text-center text-xs mb-2">
+                A passkey will be created on this extension and synced with your google account.
               </p>
               
               {isConnected && (
-                <div className="w-full flex cube-container mb-6">
+                <div className="w-full flex cube-container mb-2">
                   <div ref={frontCubeRef as any} className="flex-1" />
                   <div ref={backCubeRef as any} className="flex-1" />
                 </div>
               )}
               
               {!isConnected && (
-                <div className="text-center mb-6 text-xs text-[#8e8e93]">
-                  Connecting to Rubiks Cube...
+                <div className="text-center mb-4 text-xs text-[#8e8e93]">
+                  Connecting to the Cube...
                 </div>
               )}
               
