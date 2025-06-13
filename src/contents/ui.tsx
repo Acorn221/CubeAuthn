@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { initPortClient } from "@/contents-helpers/port-messaging";
 import Dialog from "@/contents-helpers/dialog";
 import cssText from "data-text:~/contents/style.css"
+import appleStyleCss from "data-text:@/components/apple-style/apple-style.css"
 import type { PlasmoCSConfig } from "plasmo";
 
 export const config: PlasmoCSConfig = {
@@ -13,13 +14,16 @@ const styleElement = document.createElement("style")
 export const getStyle = (): HTMLStyleElement => {
   const baseFontSize = 16
 
+  // Process main CSS
   let updatedCssText = cssText.replaceAll(":root", ":host(plasmo-csui)")
   const remRegex = /([\d.]+)rem/g
   updatedCssText = updatedCssText.replace(remRegex, (match, remValue) => {
     const pixelsValue = parseFloat(remValue) * baseFontSize
-
     return `${pixelsValue}px`
   })
+
+  // Add Apple style CSS
+  updatedCssText += "\n" + appleStyleCss
 
   styleElement.textContent = updatedCssText
 
