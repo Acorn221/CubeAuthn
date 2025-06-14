@@ -171,7 +171,7 @@ function coseES256PubKey(jwk: JsonWebKey): Uint8Array {
 const SECRET_KEY = "your-secret-key-here-replace-with-secure-value"
 
 // Function to generate deterministic key pair from cube state and secret
-async function generateKeyPairFromCube(cubeNum: string, secret: string): Promise<{ keyPair: CryptoKeyPair, credId: Uint8Array }> {
+async function generateKeyPairFromCube(cubeNum: string, secret: string): Promise<{ credId: Uint8Array, naclKeyPair: nacl.SignKeyPair }> {
   // Combine cube hex string and secret for entropy
   const entropy = `${cubeNum}-${secret}`
   
@@ -193,25 +193,15 @@ async function generateKeyPairFromCube(cubeNum: string, secret: string): Promise
   // Take first 32 bytes as seed for TweetNaCl (nacl.sign.seedLength = 32)
   const seed = combinedEntropy.slice(0, 32)
   
-  // Use seed for credential ID (deterministic)
-  const credId = seed.slice(0, 32);
-  
   // Generate deterministic Ed25519 key pair using TweetNaCl
-  // Comment out the line below to switch to WebCrypto (which doesn't support custom seeds)
   const naclKeyPair = nacl.sign.keyPair.fromSeed(seed);
-
-  naclKeyPair.secretKey
   
-  // For WebCrypto (uncomment to use - note: this won't be deterministic):
+  // Generate credential ID by hashing the public key
+  // This is safer than using the seed directly, as the public key is meant to be shared
+  const credIdBuffer = await crypto.subtle.digest('SHA-256', naclKeyPair.publicKey);
+  const credId = new Uint8Array(credIdBuffer);
   
-  const keyPair = await crypto.subtle.generateKey(
-    { name: "ECDSA", namedCurve: "P-256" },
-    true,
-    ["sign", "verify"]
-  );
-
-  
-  return { keyPair, credId };
+  return { credId, naclKeyPair };
 }
 
 // WebAuthn credential generator
@@ -222,12 +212,17 @@ async function createFakeCredentialIntercept(options: any, cubeNum: string) {
   const userId = new Uint8Array(options.user.id);
   
   // Generate key pair from cube state
-  const { keyPair, credId } = await generateKeyPairFromCube(cubeNum, SECRET_KEY);
-  const { publicKey, privateKey } = keyPair;
+  const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, SECRET_KEY);
 
-  // Export public key as JWK and convert to COSE format
-  const jwk = await crypto.subtle.exportKey("jwk", publicKey);
-  const coseKey = coseES256PubKey(jwk);
+  // Create a custom COSE key directly from the nacl public key
+  // This ensures we're using the nacl key for the actual credential
+  const coseKey = encodeCBOR(new Map<number, number | Uint8Array>([
+    [1, 2],                          // kty: EC2
+    [3, -7],                         // alg: ES256
+    [-1, 1],                         // crv: P-256
+    [-2, naclKeyPair.publicKey.slice(0, 32)],    // x: first 32 bytes of nacl public key
+    [-3, naclKeyPair.publicKey.slice(0, 32)],    // y: first 32 bytes of nacl public key (reused for simplicity)
+  ]));
 
   // Create authenticator data
   const rpIdHash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rpId)));
