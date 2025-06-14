@@ -1,6 +1,7 @@
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { ports } from ".."
 import nacl from "tweetnacl"
+import type { SerializablePublicKeyCredential } from "../types"
 
 export type HandleRegisterRequest = {
   publicKey: CredentialCreationOptions["publicKey"]
@@ -72,7 +73,7 @@ async function createCredentialResponse(
   publicKey: CredentialCreationOptions["publicKey"],
   keyPair: CryptoKeyPair,
   cubeNum: string
-): Promise<any> {
+) {
   // Export the public key
   const publicKeyBuffer = await crypto.subtle.exportKey("spki", keyPair.publicKey)
   
@@ -106,21 +107,38 @@ async function createCredentialResponse(
     origin: publicKey?.rp?.id || "localhost",
     crossOrigin: false
   }
+
+  const id = Array.from(credentialId).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Helper function to convert ArrayBuffer/Uint8Array to base64 string
+  const arrayBufferToBase64 = (buffer: ArrayBuffer | Uint8Array): string => {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+  
+  // Create attestation object bytes
+  const attestationObjectBytes = new TextEncoder().encode(JSON.stringify(attestationObject));
+  const clientDataJSONBytes = new TextEncoder().encode(JSON.stringify(clientDataJSON));
   
   // The actual WebAuthn credential response structure
   const credential = {
-    id: Array.from(credentialId).map(b => b.toString(16).padStart(2, '0')).join(''),
-    rawId: credentialId,
+    id: id,
+    rawId: arrayBufferToBase64(credentialId),
     response: {
-      attestationObject: new Uint8Array(JSON.stringify(attestationObject).length),
-      clientDataJSON: new TextEncoder().encode(JSON.stringify(clientDataJSON)),
-      publicKey: new Uint8Array(publicKeyBuffer),
-      publicKeyAlgorithm: -7 // ES256
+      attestationObject: arrayBufferToBase64(attestationObjectBytes),
+      clientDataJSON: arrayBufferToBase64(clientDataJSONBytes),
+      publicKey: arrayBufferToBase64(publicKeyBuffer),
+      publicKeyAlgorithm: -7, // ES256
+      transports: ["internal"]
     },
     type: "public-key",
-    // Custom field to include cube state for verification
-    cubeState: cubeNum
-  }
+    authenticatorAttachment: "platform",
+    clientExtensionResults: {},
+  } satisfies SerializablePublicKeyCredential
   
   return credential
 }
@@ -159,6 +177,8 @@ const handler: PlasmoMessaging.MessageHandler<
 
     // Generate key pair from cube state and secret key
     const keyPair = await generateKeyPairFromCube(cubeNum as string, SECRET_KEY)
+
+    // TODO: Save the keypair and site URL to the synced storage
     
     // Create WebAuthn credential response
     const credential = await createCredentialResponse(
