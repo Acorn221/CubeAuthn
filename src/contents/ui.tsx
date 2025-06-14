@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { initPortClient } from "@/contents-helpers/port-messaging";
-import Dialog from "@/contents-helpers/dialog";
 import cssText from "data-text:~/contents/style.css"
 import appleStyleCss from "data-text:@/components/apple-style/apple-style.css"
 import type { PlasmoCSConfig } from "plasmo";
+import { PasskeyDialog } from "@/components/apple-style";
 
 export const config: PlasmoCSConfig = {
   matches: ["https://webauthn.io/*"],
@@ -38,7 +38,7 @@ const Root = () => {
     });
   }, []);
 
-  return <Dialog />;
+  return <PasskeyDialog />;
 };
 
 export default Root;

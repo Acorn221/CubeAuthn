@@ -56,6 +56,7 @@ navigator.credentials.create = async function(options: CredentialCreationOptions
     console.log("Sending msg to background script for WebAuthn registration");
     
     try {
+      console.log(`PUBLIC KEY`, options.publicKey);
       const res = await sendToBackgroundViaRelay<HandleRegisterRequest, HandleRegisterResponse>({
         name: "handleRegister",
         body: {

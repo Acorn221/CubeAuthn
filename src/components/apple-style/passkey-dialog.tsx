@@ -100,7 +100,6 @@ const PasskeyDialog: React.FC = () => {
     btCube.current.on("cubeStateChanged", listener);
 
     return () => {
-      btCube.current.stop();
       btCube.current.off("cubeStateChanged", listener);
     };
   }, [btCube.current]);
@@ -137,7 +136,7 @@ const PasskeyDialog: React.FC = () => {
             onClick={(e) => e.stopPropagation()} // Prevent clicks on the dialog from closing it
           >
             {/* Header with Sign In text and Cancel button */}
-            <div className="flex mx-4 cursor-default">
+            <div className="flex cursor-default">
               <div className="flex-1 top-4 flex items-center">
                 <UserLock className="size-6" />
                 <span className="text-md font-medium ml-2">Sign In</span>
