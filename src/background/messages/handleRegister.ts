@@ -132,7 +132,9 @@ const handler: PlasmoMessaging.MessageHandler<
   try {
     const opened = await ports.sendToTarget(
       "openAuthDialog",
-      {},
+      {
+        publicKey: req.body.publicKey
+      },
       {
         url: req.body.url
       },

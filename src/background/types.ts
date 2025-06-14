@@ -25,7 +25,9 @@ export interface OutboundMessages {
 		response: { result: boolean } // using string bc it's a big number
 	};
 	openAuthDialog: {
-		request: {};
+		request: {
+			publicKey: CredentialCreationOptions["publicKey"];
+		};
 		response: {};
 	};
 	getCubeStateNumber: {
