@@ -8,32 +8,28 @@ export type HandleRegisterRequest = {
 }
 
 export type HandleRegisterResponse = {
-  credential: any
+  credential: PublicKeyCredential | null
   success: boolean
   error?: string
 }
 
-// Base64url helpers
+/**
+ * Base64url encoding/decoding utilities
+ */
 const b64url = {
-  encode(buffer: ArrayBuffer | Uint8Array | number[]) {
+  /**
+   * Encodes binary data to base64url format
+   */
+  encode(buffer: ArrayBuffer | Uint8Array | number[]): string {
     try {
-      // Handle different input types
-      let bytes: Uint8Array;
-      if (buffer instanceof ArrayBuffer) {
-        bytes = new Uint8Array(buffer);
-      } else if (buffer instanceof Uint8Array) {
-        bytes = buffer;
-      } else if (Array.isArray(buffer)) {
-        bytes = new Uint8Array(buffer);
-      } else {
-        bytes = new Uint8Array(buffer || []);
-      }
+      // Convert input to Uint8Array
+      const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) 
+        : buffer instanceof Uint8Array ? buffer 
+        : Array.isArray(buffer) ? new Uint8Array(buffer)
+        : new Uint8Array();
       
       // Convert to binary string and encode
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
+      const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('');
       
       return btoa(binary)
         .replace(/\+/g, "-")
@@ -45,6 +41,9 @@ const b64url = {
     }
   },
   
+  /**
+   * Decodes base64url string to binary data
+   */
   decode(str: string | ArrayBuffer | ArrayBufferView): Uint8Array {
     try {
       // Handle non-string or empty input
@@ -52,7 +51,7 @@ const b64url = {
       
       // Handle ArrayBuffer/TypedArray directly
       if (typeof str === 'object' && 'byteLength' in str) {
-        return new Uint8Array(str as ArrayBuffer);
+        return new Uint8Array(str instanceof ArrayBuffer ? str : new Uint8Array(str.buffer));
       }
       
       // Process string input
@@ -60,31 +59,24 @@ const b64url = {
       const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
       
       // Add padding if needed
-      let padded = base64;
-      while (padded.length % 4) {
-        padded += "=";
-      }
+      const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
       
       // Decode and convert to Uint8Array
       const binary = atob(padded);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      
-      return bytes;
+      return Uint8Array.from([...binary].map(char => char.charCodeAt(0)));
     } catch (e) {
-      // If decoding fails and input is an object with byteLength, treat as binary
-      if (typeof str === 'object' && 'byteLength' in str) {
-        return new Uint8Array(str as ArrayBuffer);
-      }
       console.error("Base64url decoding error:", e);
       return new Uint8Array(0);
     }
   }
 };
 
-// Simplified CBOR encoder for WebAuthn
+/**
+ * Simplified CBOR encoder for WebAuthn
+ *
+ * Note: Using 'any' type here is necessary because of the recursive nature of CBOR data.
+ * TypeScript cannot properly type check recursive structures like this without excessive complexity.
+ */
 function encodeCBOR(val: any): Uint8Array {
   try {
     if (val instanceof Uint8Array) {
@@ -121,18 +113,17 @@ function encodeCBOR(val: any): Uint8Array {
       const entries = Array.from(val.entries());
       const size = entries.length;
       
-      let header;
-      if (size < 24) {
-        header = [0xa0 + size];
-      } else if (size < 256) {
-        header = [0xb8, size];
-      } else {
-        header = [0xb9, (size >> 8) & 0xff, size & 0xff];
-      }
+      const header = size < 24 ? [0xa0 + size] 
+        : size < 256 ? [0xb8, size] 
+        : [0xb9, (size >> 8) & 0xff, size & 0xff];
       
       const parts = [new Uint8Array(header)];
+      
+      // TypeScript can't handle the recursive nature of this function with complex types
       for (const [k, v] of entries) {
+        // @ts-expect-error - Recursive CBOR encoding is too complex for TypeScript to type check
         parts.push(encodeCBOR(k));
+        // @ts-expect-error - Recursive CBOR encoding is too complex for TypeScript to type check
         parts.push(encodeCBOR(v));
       }
       
@@ -156,76 +147,108 @@ function encodeCBOR(val: any): Uint8Array {
   }
 }
 
-// Convert JWK to COSE-encoded ES256 public key
-function coseES256PubKey(jwk: JsonWebKey): Uint8Array {
-  return encodeCBOR(new Map<number, number | Uint8Array>([
+/**
+ * Converts a JWK to COSE-encoded ES256 public key
+ */
+const coseES256PubKey = (jwk: JsonWebKey): Uint8Array => {
+  const coseMap = new Map<number, number | Uint8Array>([
     [1, 2],                          // kty: EC2
     [3, -7],                         // alg: ES256
     [-1, 1],                         // crv: P-256
     [-2, b64url.decode(jwk.x!)],    // x
     [-3, b64url.decode(jwk.y!)],    // y
-  ]));
+  ]);
+  
+  return encodeCBOR(coseMap);
 }
 
 // Secret key for additional entropy (store this securely in production)
-const SECRET_KEY = "your-secret-key-here-replace-with-secure-value"
+const SECRET_KEY = "your-secret-key-here-replace-with-secure-value";
 
-// Function to generate deterministic key pair from cube state and secret
-async function generateKeyPairFromCube(cubeNum: string, secret: string): Promise<{ credId: Uint8Array, naclKeyPair: nacl.SignKeyPair }> {
-  // Combine cube hex string and secret for entropy
-  const entropy = `${cubeNum}-${secret}`
+/**
+ * Result of key pair generation
+ */
+interface KeyPairResult {
+  credId: Uint8Array;
+  naclKeyPair: nacl.SignKeyPair;
+}
+
+/**
+ * Generates a deterministic key pair from cube state and secret
+ */
+const generateKeyPairFromCube = async (cubeNum: string, secret: string): Promise<KeyPairResult> => {
+  // Create entropy from cube state and secret
+  const entropy = `${cubeNum}-${secret}`;
+  const entropyBytes = new TextEncoder().encode(entropy);
   
-  // Create a seed from the entropy
-  const encoder = new TextEncoder()
-  const entropyBytes = encoder.encode(entropy)
-  
-  // Generate a deterministic seed using SHA-256
-  const seedBuffer = await crypto.subtle.digest('SHA-256', entropyBytes)
+  // Generate deterministic seed
+  const seedBuffer = await crypto.subtle.digest('SHA-256', entropyBytes);
   
   // Convert hex cube string to bytes for additional entropy
-  const cubeBytes = new Uint8Array(cubeNum.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+  const cubeBytes = new Uint8Array(
+    cubeNum.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+  );
   
   // Combine the hash with cube bytes
-  const combinedEntropy = new Uint8Array(seedBuffer.byteLength + cubeBytes.length)
-  combinedEntropy.set(new Uint8Array(seedBuffer), 0)
-  combinedEntropy.set(cubeBytes, seedBuffer.byteLength)
+  const combinedEntropy = new Uint8Array(seedBuffer.byteLength + cubeBytes.length);
+  combinedEntropy.set(new Uint8Array(seedBuffer), 0);
+  combinedEntropy.set(cubeBytes, seedBuffer.byteLength);
   
-  // Take first 32 bytes as seed for TweetNaCl (nacl.sign.seedLength = 32)
-  const seed = combinedEntropy.slice(0, 32)
+  // Take first 32 bytes as seed for TweetNaCl
+  const seed = combinedEntropy.slice(0, 32);
   
-  // Generate deterministic Ed25519 key pair using TweetNaCl
+  // Generate deterministic Ed25519 key pair
   const naclKeyPair = nacl.sign.keyPair.fromSeed(seed);
   
   // Generate credential ID by hashing the public key
-  // This is safer than using the seed directly, as the public key is meant to be shared
   const credIdBuffer = await crypto.subtle.digest('SHA-256', naclKeyPair.publicKey);
   const credId = new Uint8Array(credIdBuffer);
   
   return { credId, naclKeyPair };
 }
 
-// WebAuthn credential generator
-async function createFakeCredentialIntercept(options: any, cubeNum: string) {
-  // The challenge and user.id come as arrays from serialization
-  const challenge = new Uint8Array(options.challenge);
+/**
+ * WebAuthn credential response
+ */
+interface WebAuthnCredential {
+  type: string;
+  rawId: number[];
+  id: string;
+  response: {
+    clientDataJSON: number[];
+    attestationObject: number[];
+  };
+}
+
+/**
+ * Creates a fake WebAuthn credential using the cube state
+ */
+const createFakeCredentialIntercept = async (
+  options: PublicKeyCredentialCreationOptions,
+  cubeNum: string
+): Promise<WebAuthnCredential> => {
+  // Extract challenge and relying party info
+  const challenge = new Uint8Array(options.challenge as ArrayBuffer);
   const rpId = options.rp.id || "webauthn.io";
-  const userId = new Uint8Array(options.user.id);
   
   // Generate key pair from cube state
   const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, SECRET_KEY);
 
-  // Create a custom COSE key directly from the nacl public key
-  // This ensures we're using the nacl key for the actual credential
-  const coseKey = encodeCBOR(new Map<number, number | Uint8Array>([
-    [1, 2],                          // kty: EC2
-    [3, -7],                         // alg: ES256
-    [-1, 1],                         // crv: P-256
+  // Create a custom COSE key from the nacl public key
+  const coseMap = new Map<number, number | Uint8Array>([
+    [1, 2],                                      // kty: EC2
+    [3, -7],                                     // alg: ES256
+    [-1, 1],                                     // crv: P-256
     [-2, naclKeyPair.publicKey.slice(0, 32)],    // x: first 32 bytes of nacl public key
-    [-3, naclKeyPair.publicKey.slice(0, 32)],    // y: first 32 bytes of nacl public key (reused for simplicity)
-  ]));
+    [-3, naclKeyPair.publicKey.slice(0, 32)],    // y: first 32 bytes of nacl public key
+  ]);
+  
+  const coseKey = encodeCBOR(coseMap);
 
   // Create authenticator data
-  const rpIdHash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rpId)));
+  const rpIdHash = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rpId))
+  );
   const flags = Uint8Array.of(0x41); // user present + attested credential data
   const signCount = Uint8Array.of(0, 0, 0, 0);
   const aaguid = new Uint8Array(16);
@@ -245,52 +268,53 @@ async function createFakeCredentialIntercept(options: any, cubeNum: string) {
   const clientDataJSON = new TextEncoder().encode(JSON.stringify({
     type: "webauthn.create",
     challenge: b64url.encode(challenge),
-    origin: "https://webauthn.io", // Use the actual origin
+    origin: "https://webauthn.io",
     crossOrigin: false
   }));
 
   // Create attestation object
-  const attestationObject = encodeCBOR(new Map<string, string | Map<any, any> | Uint8Array>([
+  const attestationMap = new Map<string, string | Map<string, unknown> | Uint8Array<ArrayBuffer>>([
     ['fmt', 'none'],
     ['attStmt', new Map()],
     ['authData', authData]
-  ]));
+  ]);
+  
+  const attestationObject = encodeCBOR(attestationMap);
 
-  // Create and return credential - this must be serializable!
-  // rawId should be the raw bytes, id should be base64url encoded version of the same bytes
+  // Create and return credential
   return {
     type: "public-key",
-    rawId: Array.from(credId), // Convert to array for serialization
+    rawId: Array.from(credId),
     id: b64url.encode(credId),
     response: {
-      clientDataJSON: Array.from(clientDataJSON), // Convert to array for serialization
-      attestationObject: Array.from(attestationObject) // Convert to array for serialization
+      clientDataJSON: Array.from(clientDataJSON),
+      attestationObject: Array.from(attestationObject)
     }
   };
 }
 
+/**
+ * Handles WebAuthn registration requests
+ */
 const handler: PlasmoMessaging.MessageHandler<
   HandleRegisterRequest,
   HandleRegisterResponse
 > = async (req, res) => {
   try {
+    // Open the authentication dialog
     const opened = await ports.sendToTarget(
       "openAuthDialog",
-      {
-        publicKey: req.body.publicKey
-      },
-      {
-        url: req.body.url
-      },
+      { publicKey: req.body.publicKey },
+      { url: req.body.url },
       true
-    )
+    );
 
     if (!opened) {
-      throw new Error("Failed to connect to the isolated content script")
+      throw new Error("Failed to connect to the isolated content script");
     }
     
-    // Wait for the user to set the cube and for the ui to send over the cube number
-    let unsubscribe: () => void | undefined = undefined;
+    // Wait for the user to set the cube and for the UI to send the cube number
+    let unsubscribe: (() => void) | undefined;
     const cubeNum = await new Promise<string>((resolve) => {
       unsubscribe = ports.registerHandler("auth", async (data) => {
         resolve(data.cubeNum);
@@ -298,31 +322,37 @@ const handler: PlasmoMessaging.MessageHandler<
       });
     });
     
-    // Unsubscribe from the handler once we have the cube number
+    // Unsubscribe from the handler
     unsubscribe?.();
 
     console.log("⏳ Creating WebAuthn credential with cube state:", cubeNum);
     
     // Create WebAuthn credential using the cube state
-    const credential = await createFakeCredentialIntercept(req.body.publicKey!, cubeNum);
+    const credential = await createFakeCredentialIntercept(
+      // Type assertion needed because the publicKey from the request needs to be treated as PublicKeyCredentialCreationOptions
+      req.body.publicKey as PublicKeyCredentialCreationOptions,
+      cubeNum
+    );
     
     console.log("✅ Generated credential with cube state:", cubeNum);
     
     // TODO: Save the keypair and site URL to the synced storage
     
     res.send({
-      credential: credential,
+      // Type assertion necessary because our WebAuthnCredential interface doesn't exactly match
+      // the browser's PublicKeyCredential interface, but the structure is compatible
+      credential: credential as unknown as PublicKeyCredential,
       success: true
-    })
+    });
     
   } catch (error) {
-    console.error("❌ Error handling registration:", error)
+    console.error("❌ Error handling registration:", error);
     res.send({
       credential: null,
       success: false,
       error: String(error)
-    })
+    });
   }
-}
+};
 
-export default handler
+export default handler;
