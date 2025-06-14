@@ -12,37 +12,96 @@ export const config: PlasmoCSConfig = {
 const originalCredentialCreate = navigator.credentials.create.bind(navigator.credentials);
 // const originalCredentialGet = navigator.credentials.get.bind(navigator.credentials);
 
-// Helper function to convert our credential format to a proper WebAuthn PublicKeyCredential
-function createWebAuthnCredential(credentialData: any): PublicKeyCredential {
+// Base64url helpers
+const b64url = {
+  encode(buffer: ArrayBuffer | Uint8Array | number[]) {
+    try {
+      // Handle different input types
+      let bytes: Uint8Array;
+      if (buffer instanceof ArrayBuffer) {
+        bytes = new Uint8Array(buffer);
+      } else if (buffer instanceof Uint8Array) {
+        bytes = buffer;
+      } else if (Array.isArray(buffer)) {
+        bytes = new Uint8Array(buffer);
+      } else {
+        bytes = new Uint8Array(buffer || []);
+      }
+      
+      // Convert to binary string and encode
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      
+      return btoa(binary)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    } catch (e) {
+      console.error("Base64url encoding error:", e);
+      return "";
+    }
+  },
+  
+  decode(str: string | ArrayBuffer | ArrayBufferView): Uint8Array {
+    try {
+      // Handle non-string or empty input
+      if (!str) return new Uint8Array(0);
+      
+      // Handle ArrayBuffer/TypedArray directly
+      if (typeof str === 'object' && 'byteLength' in str) {
+        return new Uint8Array(str as ArrayBuffer);
+      }
+      
+      // Process string input
+      const input = String(str);
+      const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
+      
+      // Add padding if needed
+      let padded = base64;
+      while (padded.length % 4) {
+        padded += "=";
+      }
+      
+      // Decode and convert to Uint8Array
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      
+      return bytes;
+    } catch (e) {
+      // If decoding fails and input is an object with byteLength, treat as binary
+      if (typeof str === 'object' && 'byteLength' in str) {
+        return new Uint8Array(str as ArrayBuffer);
+      }
+      console.error("Base64url decoding error:", e);
+      return new Uint8Array(0);
+    }
+  }
+};
+
+// Helper function to convert our serialized credential to a proper WebAuthn PublicKeyCredential
+function createWebAuthnCredential(credentialData: any): any {
+  // Convert arrays back to ArrayBuffers
+  const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer;
+  
   // Create the credential object that matches the actual PublicKeyCredential interface
   const credential = {
-    id: credentialData.id,
+    id: credentialData.id, // This should already be base64url encoded
     type: "public-key",
-    rawId: credentialData.rawId instanceof ArrayBuffer ? credentialData.rawId : credentialData.rawId.buffer,
-    authenticatorAttachment: null,
+    rawId: rawIdBuffer,
     response: {
-      clientDataJSON: credentialData.response.clientDataJSON instanceof ArrayBuffer 
-        ? credentialData.response.clientDataJSON 
-        : credentialData.response.clientDataJSON.buffer,
-      // attestationObject: credentialData.response.attestationObject,
-    } satisfies AuthenticatorResponse,
+      clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer,
+      attestationObject: new Uint8Array(credentialData.response.attestationObject).buffer,
+    },
     
-    getClientExtensionResults(): AuthenticationExtensionsClientOutputs {
+    getClientExtensionResults() {
       return {};
     },
-    
-    toJSON() {
-      return {
-        id: credentialData.id,
-        rawId: credentialData.id,
-        type: "public-key",
-        response: {
-          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(this.response.clientDataJSON))),
-          attestationObject: btoa(String.fromCharCode(...new Uint8Array(credentialData.response.attestationObject))),
-        }
-      };
-    },
-  } satisfies PublicKeyCredential;
+  };
 
   return credential;
 }
@@ -57,10 +116,29 @@ navigator.credentials.create = async function(options: CredentialCreationOptions
     
     try {
       console.log(`PUBLIC KEY`, options.publicKey);
+      
+      // Convert BufferSource fields to arrays for serialization
+      const publicKeyForSerialization = {
+        ...options.publicKey,
+        challenge: Array.from(new Uint8Array(
+          options.publicKey.challenge instanceof ArrayBuffer
+            ? options.publicKey.challenge
+            : options.publicKey.challenge.buffer
+        )),
+        user: {
+          ...options.publicKey.user,
+          id: Array.from(new Uint8Array(
+            options.publicKey.user.id instanceof ArrayBuffer
+              ? options.publicKey.user.id
+              : options.publicKey.user.id.buffer
+          ))
+        }
+      };
+      
       const res = await sendToBackgroundViaRelay<HandleRegisterRequest, HandleRegisterResponse>({
         name: "handleRegister",
         body: {
-          publicKey: options.publicKey,
+          publicKey: publicKeyForSerialization as any, // Type assertion needed for serialization
           url: window.location.href
         }
       });
@@ -69,9 +147,9 @@ navigator.credentials.create = async function(options: CredentialCreationOptions
       
       // Handle the response
       if (res.success && res.credential) {
-        console.log("Successfully created WebAuthn credential with cube state:", res.credential.cubeState);
+        console.log("Successfully created WebAuthn credential with cube state");
         
-        // Convert our credential data to a proper WebAuthn PublicKeyCredential
+        // Convert the serialized credential to a proper WebAuthn credential object
         const webauthnCredential = createWebAuthnCredential(res.credential);
         
         return webauthnCredential;
@@ -108,41 +186,5 @@ navigator.credentials.create = async function(options: CredentialCreationOptions
   return originalCredentialCreate(options);
 };
 
-console.log("WebAuthn content script loaded and credential.create method intercepted");
-// // Create a proxy for the credentials.get method
-// navigator.credentials.get = async function(options: CredentialRequestOptions): Promise<Credential | null> {
-//   console.log("WebAuthn credential request intercepted", options);
-  
-//   // Check if this is a WebAuthn request
-//   if (options?.publicKey) {
-//     try {
-//       // Try to connect to the cube
-//       const connected = await connectToCube();
-      
-//       if (connected) {
-//         console.log("Using Rubik's cube for WebAuthn authentication");
-        
-//         // TODO: Modify the publicKey options with cube-derived key material
-//         // This is where you would modify the challenge or user verification
-        
-//         // For now, we'll just log that we're intercepting
-//         console.log("Modifying WebAuthn authentication with Rubik's cube data");
-        
-//         // Generate key material from cube
-//         const keyMaterial = generateKeyFromCube();
-        
-//         // TODO: Incorporate keyMaterial into the credential authentication process
-//         // This might involve modifying the challenge or other parameters
-//       } else {
-//         console.log("Cube not connected, proceeding with original WebAuthn flow");
-//       }
-//     } catch (error) {
-//       console.error("Error in WebAuthn interception:", error);
-//     }
-//   }
-  
-//   // Call the original method
-//   return originalCredentialGet(options);
-// };
 
 console.log("WebAuthn interception initialized");
