@@ -8,7 +8,7 @@ export type HandleRegisterRequest = {
 }
 
 export type HandleRegisterResponse = {
-  credential: PublicKeyCredential | null
+  credential: WebAuthnCredential | null
   success: boolean
   error?: string
 }
@@ -341,7 +341,7 @@ const handler: PlasmoMessaging.MessageHandler<
     res.send({
       // Type assertion necessary because our WebAuthnCredential interface doesn't exactly match
       // the browser's PublicKeyCredential interface, but the structure is compatible
-      credential: credential as unknown as PublicKeyCredential,
+      credential,
       success: true
     });
     

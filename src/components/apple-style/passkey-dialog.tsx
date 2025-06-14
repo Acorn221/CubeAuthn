@@ -167,12 +167,12 @@ const PasskeyDialog: React.FC = () => {
               </div>
 
               <h2 className="text-lg apple-dialog-title mb-1">
-                Use your Cube to sign in?
+                Use CubeAuthn to sign in?
               </h2>
 
               {publicKey && (
                 <p className="apple-dialog-description text-center text-xs mb-2">
-                  A passkey will be created for {publicKey.user.displayName} on this extension and synced with
+                  A passkey will be created for "{publicKey.user.displayName}" on this extension and synced with
                   your google account.
                 </p>
               )}
