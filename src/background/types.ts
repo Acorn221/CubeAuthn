@@ -2,7 +2,7 @@ import type { MessageDefinitions } from "./port-messaging-api";
 
 export interface InboundMessages {
 	auth: {
-		request: { cubeNum: string };
+		request: { cubeNum: string, origin: string };
 		response: { success: boolean; };
 	};
 	getData: {

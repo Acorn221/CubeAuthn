@@ -3,6 +3,7 @@ import { ports } from ".."
 import nacl from "tweetnacl"
 import { Storage } from "@plasmohq/storage"
 import { getSecret } from "@/background/utils"
+import type { InboundMessages } from "../types"
 
 export type HandleRegisterRequest = {
   publicKey: CredentialCreationOptions["publicKey"]
@@ -214,14 +215,16 @@ const createFakeCredentialIntercept = async ({
   publicKey,
   cubeNum,
   secret,
+  origin,
 }: {
   publicKey: PublicKeyCredentialCreationOptions,
   cubeNum: string,
-  secret: string
+  secret: string,
+  origin: string,
 }): Promise<WebAuthnCredential> => {
   // Extract challenge and relying party info
   const challenge = new Uint8Array(publicKey.challenge as ArrayBuffer);
-  const rpId = publicKey.rp.id || "webauthn.io";
+  const rpId = publicKey.rp.id;
   
   // Generate key pair from cube state
   const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret);
@@ -260,7 +263,7 @@ const createFakeCredentialIntercept = async ({
   const clientDataJSON = new TextEncoder().encode(JSON.stringify({
     type: "webauthn.create",
     challenge: b64url.encode(challenge),
-    origin: "https://webauthn.io",
+    origin,
     crossOrigin: false
   }));
 
@@ -307,9 +310,9 @@ const handler: PlasmoMessaging.MessageHandler<
     
     // Wait for the user to set the cube and for the UI to send the cube number
     let unsubscribe: (() => void) | undefined;
-    const cubeNum = await new Promise<string>((resolve) => {
+    const { cubeNum, origin } = await new Promise<InboundMessages["auth"]["request"]>((resolve) => {
       unsubscribe = ports.registerHandler("auth", async (data) => {
-        resolve(data.cubeNum);
+        resolve(data);
         return { success: true };
       });
     });
@@ -326,6 +329,7 @@ const handler: PlasmoMessaging.MessageHandler<
       publicKey: req.body.publicKey,
       cubeNum,
       secret: await getSecret(storage),
+      origin,
     });
     
     console.log("✅ Generated credential with cube state:", cubeNum);

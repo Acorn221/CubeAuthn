@@ -122,7 +122,9 @@ const PasskeyDialog: React.FC = () => {
       btCube.current.stop()
 
       const res = await sendResult({
-        cubeNum
+        cubeNum,
+        // getting the origin from the isolated cs for security
+        origin: window.location.origin,
       })
 
       if (res.success) {
