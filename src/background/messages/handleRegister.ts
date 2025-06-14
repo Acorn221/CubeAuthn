@@ -330,7 +330,7 @@ const handler: PlasmoMessaging.MessageHandler<
     
     console.log("✅ Generated credential with cube state:", cubeNum);
     
-    // TODO: Save the keypair and site URL to the synced storage
+    // TODO: Save the site URL and the public key to the storage (use public key to verify the cube state is correct)
     
     res.send({
       credential,

@@ -19,3 +19,13 @@ export const getSecret = (
 
 	return secret;
 }
+
+// export const addKeys = async ({
+// 	storage,
+// 	keys,
+// }: {
+// 	 storage?: Storage;
+// 	 keys: 
+// }) => {
+
+// }
