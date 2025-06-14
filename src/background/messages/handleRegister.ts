@@ -1,6 +1,8 @@
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { ports } from ".."
 import nacl from "tweetnacl"
+import { Storage } from "@plasmohq/storage"
+import { getSecret } from "@/background/utils"
 
 export type HandleRegisterRequest = {
   publicKey: CredentialCreationOptions["publicKey"]
@@ -147,21 +149,6 @@ function encodeCBOR(val: any): Uint8Array {
   }
 }
 
-/**
- * Converts a JWK to COSE-encoded ES256 public key
- */
-const coseES256PubKey = (jwk: JsonWebKey): Uint8Array => {
-  const coseMap = new Map<number, number | Uint8Array>([
-    [1, 2],                          // kty: EC2
-    [3, -7],                         // alg: ES256
-    [-1, 1],                         // crv: P-256
-    [-2, b64url.decode(jwk.x!)],    // x
-    [-3, b64url.decode(jwk.y!)],    // y
-  ]);
-  
-  return encodeCBOR(coseMap);
-}
-
 // Secret key for additional entropy (store this securely in production)
 const SECRET_KEY = "your-secret-key-here-replace-with-secure-value";
 
@@ -223,16 +210,21 @@ interface WebAuthnCredential {
 /**
  * Creates a fake WebAuthn credential using the cube state
  */
-const createFakeCredentialIntercept = async (
-  options: PublicKeyCredentialCreationOptions,
-  cubeNum: string
-): Promise<WebAuthnCredential> => {
+const createFakeCredentialIntercept = async ({
+  publicKey,
+  cubeNum,
+  secret,
+}: {
+  publicKey: PublicKeyCredentialCreationOptions,
+  cubeNum: string,
+  secret: string
+}): Promise<WebAuthnCredential> => {
   // Extract challenge and relying party info
-  const challenge = new Uint8Array(options.challenge as ArrayBuffer);
-  const rpId = options.rp.id || "webauthn.io";
+  const challenge = new Uint8Array(publicKey.challenge as ArrayBuffer);
+  const rpId = publicKey.rp.id || "webauthn.io";
   
   // Generate key pair from cube state
-  const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, SECRET_KEY);
+  const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret);
 
   // Create a custom COSE key from the nacl public key
   const coseMap = new Map<number, number | Uint8Array>([
@@ -326,21 +318,21 @@ const handler: PlasmoMessaging.MessageHandler<
     unsubscribe?.();
 
     console.log("⏳ Creating WebAuthn credential with cube state:", cubeNum);
+
+    const storage = new Storage({ area: "sync" });
     
     // Create WebAuthn credential using the cube state
-    const credential = await createFakeCredentialIntercept(
-      // Type assertion needed because the publicKey from the request needs to be treated as PublicKeyCredentialCreationOptions
-      req.body.publicKey as PublicKeyCredentialCreationOptions,
-      cubeNum
-    );
+    const credential = await createFakeCredentialIntercept({
+      publicKey: req.body.publicKey,
+      cubeNum,
+      secret: await getSecret(storage),
+    });
     
     console.log("✅ Generated credential with cube state:", cubeNum);
     
     // TODO: Save the keypair and site URL to the synced storage
     
     res.send({
-      // Type assertion necessary because our WebAuthnCredential interface doesn't exactly match
-      // the browser's PublicKeyCredential interface, but the structure is compatible
       credential,
       success: true
     });
