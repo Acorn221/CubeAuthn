@@ -11,6 +11,7 @@ const PasskeyDialog: React.FC = () => {
   const btCube = useRef(new BTCube());
   const [isConnected, setIsConnected] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   );
@@ -24,9 +25,12 @@ const PasskeyDialog: React.FC = () => {
 
   const sendResult = useSendMessage("auth");
 
-  useEffect(() => {
-    setIsConnected(btCube.current.isConnected());
-  }, [btCube.current.isConnected()]);
+  // Handle closing the dialog and resetting state
+  const handleCloseDialog = useCallback(() => {
+    setShowAuthDialog(false);
+    setConnectionFailed(false);
+    setIsConnected(false);
+  }, []);
 
   // Handler for authentication requests
   useMessageHandler(
@@ -34,16 +38,21 @@ const PasskeyDialog: React.FC = () => {
     async () => {
       let result: boolean | undefined;
       setShowAuthDialog(true);
+      setConnectionFailed(false);
       try {
         await btCube.current.init(macAddress);
         result = btCube.current.isConnected();
+        setIsConnected(result);
+        setFacelets(btCube.current.getCube().facelets);
+        console.log(`Result ${result} for MAC: ${macAddress}`);
       } catch (e) {
         console.error("Failed to initialize Bluetooth Cube:", e);
+        setConnectionFailed(true);
       }
 
       return { result };
     },
-    [macAddress]
+    [macAddress, setFacelets, setIsConnected]
   );
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
@@ -70,7 +79,7 @@ const PasskeyDialog: React.FC = () => {
         `r=x-270y-225x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
       );
     }
-  }, [frontCubeRef.current, facelets, convertCubeFormat]);
+  }, [frontCubeRef.current, facelets, convertCubeFormat, isConnected]);
 
   useEffect(() => {
     if (backCubeRef.current) {
@@ -80,7 +89,7 @@ const PasskeyDialog: React.FC = () => {
         `r=x-90y-135x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
       );
     }
-  }, [backCubeRef.current, facelets, convertCubeFormat]);
+  }, [backCubeRef.current, facelets, convertCubeFormat, isConnected]);
 
   useEffect(() => {
     const listener = (data) => {
@@ -112,8 +121,7 @@ const PasskeyDialog: React.FC = () => {
     } catch (error) {
       console.error("Authentication error:", error);
     } finally {
-      setShowAuthDialog(false);
-      setIsConnected(false);
+      handleCloseDialog();
     }
   };
 
@@ -122,7 +130,7 @@ const PasskeyDialog: React.FC = () => {
       {showAuthDialog && (
         <div
           className="fixed inset-0 apple-dialog-backdrop flex items-center justify-center z-[9999] apple-dialog"
-          onClick={() => setShowAuthDialog(false)}
+          onClick={handleCloseDialog}
         >
           <div
             className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-4"
@@ -134,9 +142,9 @@ const PasskeyDialog: React.FC = () => {
                 <UserLock className="size-6" />
                 <span className="text-md font-medium ml-2">Sign In</span>
               </div>
-              <div className="">
+              <div>
                 <button
-                  onClick={() => setShowAuthDialog(false)}
+                  onClick={handleCloseDialog}
                   className="px-3 py-1 rounded-md bg-[#3a3a3c] text-white text-sm font-normal cursor-pointer"
                 >
                   Cancel
@@ -163,8 +171,8 @@ const PasskeyDialog: React.FC = () => {
                 </div>
               )}
               
-              {!isConnected && (
-                <div className="text-center mb-4 text-xs text-[#8e8e93]">
+              {!isConnected && !connectionFailed && (
+                <div className="text-center my-4 text-xs text-[#8e8e93]">
                   Connecting to the Cube...
                 </div>
               )}
@@ -176,14 +184,17 @@ const PasskeyDialog: React.FC = () => {
                 >
                   Confirm Scramble
                 </button>
-              ) : (
+              ) : connectionFailed ? (
                 <button
-                  onClick={() => btCube.current.init(macAddress)}
+                  onClick={() => {
+                    setConnectionFailed(false);
+                    btCube.current.init(macAddress);
+                  }}
                   className="w-full py-3 rounded-md bg-[#3a3a3c] text-white font-medium text-sm"
                 >
                   Connect to Cube
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

@@ -27,8 +27,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       gan-i3-356-bluetooth:
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.5
+        version: 0.0.5
       lucide-react:
         specifier: ^0.515.0
         version: 0.515.0(react@18.2.0)
@@ -2122,8 +2122,8 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  gan-i3-356-bluetooth@0.0.4:
-    resolution: {integrity: sha512-529w9BpqbIHx53sTi3qwL/Whj9kM8q6wjU4/LVzdW1/MSe1trHT+MeuoRf9V7TN8y1AL4e8jSnXYFGZlLj3EDg==}
+  gan-i3-356-bluetooth@0.0.5:
+    resolution: {integrity: sha512-y/rxzz++Ogh48E6Kz0rlbzpfN/mGPyJaSqylSBZ/BUNJEY0FxZk5Rjh3Nu2zUcIKdfwKR4d6PRbMZ9bT746iQQ==}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -5660,7 +5660,7 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  gan-i3-356-bluetooth@0.0.4:
+  gan-i3-356-bluetooth@0.0.5:
     dependencies:
       lz-string: 1.5.0
 
