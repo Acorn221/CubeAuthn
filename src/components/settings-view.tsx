@@ -32,35 +32,14 @@ export function SettingsView({ onBack }: SettingsViewProps) {
   )
 
   const [fixedCubeScramble, setFixedCubeScramble] = useStorage(
-    "fixedCubeScramble",
+    "fixedCubeScrambleHash",
     (v: string | undefined) => (v === undefined ? "" : v)
-  )
+  );
 
   const [storageArea, setStorageArea] = useStorage(
     "storageArea",
     (v: "local" | "sync" | undefined) => (v === undefined ? "sync" : v)
   )
-
-  // This function is kept for the useEffect but not exposed to the UI
-  const generateNewScramble = useCallback(() => {
-    const randomScramble = Array.from({ length: 48 }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join("")
-
-    setFixedCubeScramble(randomScramble)
-  }, [setFixedCubeScramble])
-
-  // Generate a random cube scramble if none exists
-  useEffect(() => {
-    if (useSameCubeScramble && !fixedCubeScramble) {
-      generateNewScramble()
-    }
-  }, [
-    useSameCubeScramble,
-    fixedCubeScramble,
-    setFixedCubeScramble,
-    generateNewScramble
-  ])
 
   return (
     <Card className="w-[350px] border-border shadow-lg">
@@ -112,6 +91,13 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               When enabled, the same cube scramble will be used for all
               passkeys. This means you'll solve the same pattern every time.
             </p>
+            {useSameCubeScramble && !fixedCubeScramble && (
+              <div> 
+                {/* new tab needs to open */}
+                Click <a href="/tabs/set-scramble.html" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">here</a> to set a fixed cube
+                scramble pattern. This will generate a fixed cube scramble that
+              </div>
+            )}
           </div>
 
           {/* Use Stored Secret Entropy Setting */}
