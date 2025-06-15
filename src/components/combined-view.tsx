@@ -1,20 +1,20 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { StoredWebAuthnCredential } from "@/background/types"
 import { getConfiguredStorage } from "@/background/utils"
+import { Trash2 } from "lucide-react"
 
-interface CredentialsViewProps {
-  onBack: () => void
+interface CombinedViewProps {
+  onViewSettings: () => void
 }
 
-export function CredentialsView({ onBack }: CredentialsViewProps) {
+export function CombinedView({ onViewSettings }: CombinedViewProps) {
   const [credentials, setCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
   const [filteredCredentials, setFilteredCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
   const [searchTerm, setSearchTerm] = useState("")
@@ -85,55 +85,69 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
     <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1 relative">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl">Stored Passkeys</CardTitle>
+          <CardTitle className="text-xl">CubeAuthn</CardTitle>
           <Button
             variant="ghost"
-            size="sm"
-            className="h-8"
-            onClick={onBack}
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={onViewSettings}
+            title="Settings"
           >
-            Back
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
           </Button>
         </div>
         <CardDescription className="text-muted-foreground">
-          WebAuthn credentials saved for websites
+          Revolutionising the way you procrastinate at work
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex space-x-2">
-          <Input
-            type="text"
-            placeholder="Search passkeys..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-          {searchTerm && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10"
-              onClick={() => setSearchTerm("")}
-              title="Clear search"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6 6 18"></path>
-                <path d="m6 6 12 12"></path>
-              </svg>
-            </Button>
-          )}
-        </div>
-        
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading credentials...</p>
-        ) : Object.keys(filteredCredentials).length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {searchTerm ? "No matching passkeys found." : "No passkeys stored yet."}
-          </p>
+          <p className="text-sm text-muted-foreground">Loading passkeys...</p>
+        ) : Object.keys(credentials).length === 0 ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">No passkeys stored yet.</p>
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm text-muted-foreground">
+                When prompted by a website for WebAuthn authentication, solve your cube to complete the authentication.
+                Your passkeys will appear here after registration.
+              </p>
+            </div>
+          </div>
         ) : (
-          <ScrollArea className="h-[240px] rounded-md">
-            <div className="space-y-2 pr-3">
-              {Object.entries(filteredCredentials).map(([id, credential]) => (
+          <>
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                placeholder="Search passkeys..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => setSearchTerm("")}
+                  title="Clear search"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                  </svg>
+                </Button>
+              )}
+            </div>
+            
+            {Object.keys(filteredCredentials).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No matching passkeys found.</p>
+            ) : (
+              <ScrollArea className="h-[240px] rounded-md">
+                <div className="space-y-2 pr-3">
+                  {Object.entries(filteredCredentials).map(([id, credential]) => (
                 <div key={id} className="p-3 bg-muted rounded-md">
                   <div className="flex justify-between items-start">
                     <div>
@@ -141,20 +155,21 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
                       <p className="text-xs text-muted-foreground mt-1">Created: {formatDate(credential.createdAt)}</p>
                       <p className="text-xs text-muted-foreground mt-1">User: {credential.user.name || credential.user.displayName}</p>
                     </div>
-                    <Button
-                      variant="destructive"
+                    <Button 
+                      variant="destructive" 
                       size="sm"
-                      className="text-red-500"
-                      // className="h-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-6 bg-destructive hover:bg-destructive/90"
                       onClick={() => handleDeleteCredential(id)}
                     >
-                      Delete
+                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
