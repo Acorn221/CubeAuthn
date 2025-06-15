@@ -94,7 +94,6 @@ export const generateKeyPairFromCube = async (
   cubeNum: string,
   secret: string, // Make this required
   randomId?: string, // Optional for regeneration
-  iterations: number = 100000 // Optional iterations for PBKDF2
 ): Promise<KeyPairResult> => {
   // Generate a cryptographically secure random ID if not provided
   const finalRandomId = randomId || generateSecureRandomId();
@@ -120,7 +119,7 @@ export const generateKeyPairFromCube = async (
     {
       name: "PBKDF2",
       salt: salt,
-      iterations,
+      iterations: ITERATIONS,
       hash: "SHA-512"
     },
     importedKey,
