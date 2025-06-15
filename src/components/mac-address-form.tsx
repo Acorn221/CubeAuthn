@@ -9,9 +9,21 @@ import { Label } from "@/components/ui/label"
 
 interface MacAddressFormProps {
   onCancel?: () => void;
+  onSave?: () => void;
+  saveButtonText?: string;
+  hideButtons?: boolean;
+  getSaveHandler?: (saveHandler: () => void) => void;
+  getValidationState?: (isValid: boolean, hasValue: boolean) => void;
 }
 
-export function MacAddressForm({ onCancel }: MacAddressFormProps) {
+export function MacAddressForm({
+  onCancel,
+  onSave,
+  saveButtonText,
+  hideButtons = false,
+  getSaveHandler,
+  getValidationState
+}: MacAddressFormProps) {
   const [macAddress, setMacAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
@@ -41,9 +53,30 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
     if (isValid && inputValue !== "") {
       setMacAddress(inputValue);
       setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000); // Hide success message after 3 seconds
+      
+      // Call the onSave callback if provided
+      if (onSave) {
+        onSave();
+      } else {
+        // Only auto-hide the success message if we're not navigating away
+        setTimeout(() => setIsSaved(false), 3000);
+      }
     }
   };
+
+  // Expose the save handler to the parent component
+  React.useEffect(() => {
+    if (getSaveHandler) {
+      getSaveHandler(handleSave);
+    }
+  }, [getSaveHandler, handleSave]);
+
+  // Expose the validation state to the parent component
+  React.useEffect(() => {
+    if (getValidationState) {
+      getValidationState(isValid, inputValue !== "");
+    }
+  }, [getValidationState, isValid, inputValue]);
 
   return (
     <Card className="w-[350px] border-border shadow-lg">
@@ -60,9 +93,9 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
         <div className="grid w-full items-center gap-4">
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="macAddress" className="text-foreground">Cube MAC Address</Label>
-            <Input 
-              id="macAddress" 
-              placeholder="XX:XX:XX:XX:XX:XX" 
+            <Input
+              id="macAddress"
+              placeholder="XX:XX:XX:XX:XX:XX"
               value={inputValue}
               onChange={handleInputChange}
               className={isValid ? "border-input" : "border-destructive"}
@@ -80,23 +113,25 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
           </p>
         )}
       </CardContent>
-      <CardFooter className={`flex ${onCancel ? "justify-between" : "justify-end"} gap-2`}>
-        {onCancel && (
+      {!hideButtons && (
+        <CardFooter className={`flex ${onCancel ? "justify-between" : "justify-end"} gap-2`}>
+          {onCancel && (
+            <Button
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
-            variant="outline"
-            onClick={onCancel}
+            onClick={handleSave}
+            disabled={!isValid || inputValue === ""}
+            className={onCancel ? "" : "w-full"}
           >
-            Cancel
+            {saveButtonText || (isEditing ? "Update MAC Address" : "Save MAC Address")}
           </Button>
-        )}
-        <Button
-          onClick={handleSave}
-          disabled={!isValid || inputValue === ""}
-          className={onCancel ? "" : "w-full"}
-        >
-          {isEditing ? "Update MAC Address" : "Save MAC Address"}
-        </Button>
-      </CardFooter>
+        </CardFooter>
+      )}
       <div className="p-3 mx-4 mb-4 bg-muted rounded-md">
         <p className="text-xs leading-relaxed text-muted-foreground">
           <span className="font-semibold text-foreground">Note:</span> Go to <pre>chrome://bluetooth-internals</pre> to get the MAC address. You may have to connect the cube to your computer first to get the MAC address and there may be multiple GANXXX devices listed so try both.
