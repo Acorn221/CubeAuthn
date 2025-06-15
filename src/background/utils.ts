@@ -12,19 +12,35 @@ interface WebAuthnCredential {
   };
 }
 
-export const getSecret = (
+/**
+ * Gets the configured storage area from settings
+ */
+export const getStorageArea = async (): Promise<"local" | "sync"> => {
+	const storage = new Storage({ area: "sync" }); // Setting stored in sync
+	return await storage.get<"local" | "sync">("storageArea") || "sync";
+}
+
+/**
+ * Creates a storage instance with the configured area
+ */
+export const getConfiguredStorage = async (): Promise<Storage> => {
+	const area = await getStorageArea();
+	return new Storage({ area });
+}
+
+export const getSecret = async (
 	storage?: Storage,
 ) => {
 	if(!storage) {
-		storage = new Storage();
+		storage = await getConfiguredStorage();
 	}
 
-	const secret = storage.get<string>("secret");
+	const secret = await storage.get<string>("secret");
 
 	if(!secret) {
 		// generate a new secret (32 bytes string) if it doesn't exist
 		const newSecret = crypto.getRandomValues(new Uint8Array(32)).reduce((data, byte) => data + String.fromCharCode(byte), "");
-		storage.set("secret", newSecret);
+		await storage.set("secret", newSecret);
 
 		return newSecret;
 	}
@@ -57,7 +73,7 @@ export const saveWebAuthnCredential = async ({
 	publicKey: Uint8Array;
 }) => {
 	if (!storage) {
-		storage = new Storage({ area: "sync" });
+		storage = await getConfiguredStorage();
 	}
 
 	// Convert public key to base64url string for storage
@@ -100,7 +116,7 @@ export const getWebAuthnCredential = async (
 	storage?: Storage
 ) => {
 	if (!storage) {
-		storage = new Storage({ area: "sync" });
+		storage = await getConfiguredStorage();
 	}
 	
 	const credentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {};
@@ -114,7 +130,7 @@ export const getAllWebAuthnCredentials = async (
 	storage?: Storage
 ) => {
 	if (!storage) {
-		storage = new Storage({ area: "sync" });
+		storage = await getConfiguredStorage();
 	}
 	
 	return await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {};
