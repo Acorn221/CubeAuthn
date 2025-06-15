@@ -25,7 +25,7 @@ export function SettingsView({ onBack }: SettingsViewProps) {
   // Settings state
   const [useSameCubeScramble, setUseSameCubeScramble] = useStorage(
     "useSameCubeScramble",
-    (v: boolean | undefined) => (v === undefined ? false : v)
+    (v: boolean | undefined) => (v === undefined ? true : v)
   )
 
   const [useStoredSecretEntropy, setUseStoredSecretEntropy] = useStorage(
