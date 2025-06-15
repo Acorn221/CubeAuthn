@@ -1,3 +1,4 @@
+import type { CubeHashConfig } from "@/background/types"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -9,12 +10,12 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Toggle } from "@/components/ui/toggle"
+import { AlertTriangle } from "lucide-react"
 import * as React from "react"
 import { useCallback, useEffect, useState } from "react"
 
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
-import type { CubeHashConfig } from "@/background/types"
 
 interface SettingsViewProps {
   onBack: () => void
@@ -32,9 +33,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
     (v: boolean | undefined) => (v === undefined ? true : v)
   )
 
-  const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+  const [cubeScrambleHash] = useStorage<CubeHashConfig>(
     "fixedCubeScrambleHash"
-  );
+  )
 
   const [storageArea, setStorageArea] = useStorage(
     "storageArea",
@@ -91,12 +92,40 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               When enabled, the same cube scramble will be used for all
               passkeys. This means you'll solve the same pattern every time.
             </p>
-            {useSameCubeScramble && !cubeScrambleHash && (
-              <div> 
-                {/* new tab needs to open */}
-                Click <a href="/tabs/set-scramble.html" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">here</a> to set a fixed cube
-                scramble pattern. This will generate a fixed cube scramble that
-              </div>
+            {useSameCubeScramble && (
+              <>
+                {!cubeScrambleHash ? (
+                  <div className="bg-amber-900/30 border border-amber-500/50 rounded-md p-3 mb-4 flex items-start gap-4">
+                    <AlertTriangle className="text-amber-500 size-4 mt-0.5 flex-shrink-0 " />
+                    <div className="text-md text-amber-200 flex flex-col gap-2">
+                      <p className="font-medium mb-1 font-bold">
+                        Warning: No Saved Cube Scramble
+                      </p>
+                      <p>
+                        You need to set a cube scramble before you can use the
+                        same cube scramble feature.
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          window.open("/tabs/set-scramble.html", "_blank")
+                        }}>
+                        Set cube scramble
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      window.open("/tabs/set-scramble.html", "_blank")
+                    }}>
+                    Change Cube Scramble
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
