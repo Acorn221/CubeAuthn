@@ -14,7 +14,7 @@ import type {
   CubeHashConfig,
   StoredWebAuthnCredential
 } from "@/background/types"
-import { createDownloadableHTML, generateHash } from "@/utils/set-scramble"
+import { createDownloadableHTML, generateHash } from "@/utils"
 
 import { Button } from "../components/ui/button"
 

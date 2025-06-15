@@ -30,7 +30,7 @@ const IntroScreen = ({ onNext }: { onNext: () => void }) => {
             <div className="text-xs text-blue-200">
               <p className="font-medium mb-1">Proof of Concept</p>
               <p>
-                This is a proof of concept and not a final secure solution. The security of this method depends on keeping your cube's scramble pattern secret.
+                This is a proof of concept and not a final secure solution. The security of this method partially depends on keeping your cube's scramble pattern secret.
               </p>
             </div>
           </div>

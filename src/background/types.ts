@@ -105,3 +105,17 @@ export type CubeHashConfig = {
 	salt: string;
 	hash: string;
 } | undefined;
+
+
+/**
+ * WebAuthn credential response
+ */
+export interface WebAuthnCredential {
+  type: string
+  rawId: number[]
+  id: string
+  response: {
+    clientDataJSON: number[]
+    attestationObject: number[]
+  }
+}

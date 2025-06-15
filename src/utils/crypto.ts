@@ -1,4 +1,5 @@
 import type { CubeHashConfig } from "@/background/types";
+import nacl from "tweetnacl";
 
 /**
  * Calculate optimal PBKDF2 iterations that can be done in under a specified time
@@ -189,4 +190,76 @@ export const generateHash = async (
     console.error("Error generating hash:", error);
     return "";
   }
+};
+
+
+interface KeyPairResult {
+  credId: Uint8Array;
+  naclKeyPair: nacl.SignKeyPair;
+}
+
+export const generateKeyPairFromCube = async (
+  cubeNum: string,
+  secret: string, // Make this required
+  randomId?: string, // Optional for regeneration
+  iterations: number = 100000 // Optional iterations for PBKDF2
+): Promise<KeyPairResult> => {
+  // Generate a cryptographically secure random ID if not provided
+  const finalRandomId = randomId || generateSecureRandomId();
+  
+  // Create a strong key derivation input
+  const keyMaterial = `${cubeNum}:${finalRandomId}:${secret}`;
+  const keyMaterialBytes = new TextEncoder().encode(keyMaterial);
+  
+  // Use PBKDF2 for key derivation (more secure than simple hashing)
+  const salt = new TextEncoder().encode(`passkey-salt-${finalRandomId}`);
+  
+  // Import key material for PBKDF2
+  const importedKey = await crypto.subtle.importKey(
+    "raw",
+    keyMaterialBytes,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
+  );
+  
+  // Derive 32 bytes using PBKDF2
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations,
+      hash: "SHA-512"
+    },
+    importedKey,
+    256 // 32 bytes
+  );
+  
+  const seed = new Uint8Array(derivedBits);
+  
+  // Generate deterministic Ed25519 key pair
+  const naclKeyPair = nacl.sign.keyPair.fromSeed(seed);
+  
+  // Generate credential ID from public key + random ID for uniqueness
+  const credIdInput = new Uint8Array(naclKeyPair.publicKey.length + finalRandomId.length);
+  credIdInput.set(naclKeyPair.publicKey, 0);
+  credIdInput.set(new TextEncoder().encode(finalRandomId), naclKeyPair.publicKey.length);
+  
+  const credId = new TextEncoder().encode(finalRandomId);
+  
+  return { 
+    credId, 
+    naclKeyPair,
+  };
+};
+
+
+export const generateSecureRandomId = (): string => {
+  // Generate 16 bytes of secure random data
+  const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+  // Convert to base64url for safe storage/transmission
+  return btoa(String.fromCharCode(...randomBytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 };
