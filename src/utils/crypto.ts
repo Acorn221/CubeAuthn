@@ -23,8 +23,7 @@ export const arrayToHex = (array: Uint8Array): string => {
  */
 export const hashWithPBKDF2 = async (
   data: string, 
-  salt: Uint8Array, 
-  iterations: number
+  salt: Uint8Array,
 ): Promise<string> => {
   // Convert data to bytes
   const dataBytes = new TextEncoder().encode(data);
@@ -43,7 +42,7 @@ export const hashWithPBKDF2 = async (
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: iterations,
+      iterations: ITERATIONS,
       hash: 'SHA-512'
     },
     keyMaterial,
@@ -69,7 +68,7 @@ export const generateHash = async (
     const salt = arrayToHex(saltBytes);
     
     // Hash the cube state with PBKDF2
-    const hash = await hashWithPBKDF2(cubeNum, saltBytes, ITERATIONS);
+    const hash = await hashWithPBKDF2(cubeNum, saltBytes);
     
     // Save the hash configuration
     setCubeScrambleHash({
