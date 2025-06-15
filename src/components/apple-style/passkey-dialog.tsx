@@ -113,7 +113,7 @@ const PasskeyDialog: React.FC = () => {
     return () => {
       btCube.current.off("cubeStateChanged", listener)
     }
-  }, [btCube.current])
+  }, [btCube.current, macAddress])
 
   // Handle authentication confirmation
   const handleAuthConfirm = async () => {
