@@ -14,6 +14,7 @@ interface MacAddressFormProps {
   hideButtons?: boolean;
   getSaveHandler?: (saveHandler: () => void) => void;
   getValidationState?: (isValid: boolean, hasValue: boolean) => void;
+  embedInSettings?: boolean;
 }
 
 export function MacAddressForm({
@@ -22,7 +23,8 @@ export function MacAddressForm({
   saveButtonText,
   hideButtons = false,
   getSaveHandler,
-  getValidationState
+  getValidationState,
+  embedInSettings = false
 }: MacAddressFormProps) {
   const [macAddress, setMacAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
@@ -78,12 +80,75 @@ export function MacAddressForm({
     }
   }, [getValidationState, isValid, inputValue]);
 
+  // If embedInSettings is true, render a more compact version without the card wrapper
+  if (embedInSettings) {
+    return (
+      <div className="w-full">
+        <div className="flex flex-col space-y-1.5">
+          <Input
+            id="macAddress"
+            placeholder="XX:XX:XX:XX:XX:XX"
+            value={inputValue}
+            onChange={handleInputChange}
+            className={isValid ? "border-input" : "border-destructive"}
+          />
+          {!isValid && (
+            <p className="text-destructive text-xs mt-1">
+              Please enter a valid MAC address (format: XX:XX:XX:XX:XX:XX)
+            </p>
+          )}
+        </div>
+        {isSaved && (
+          <p className="text-green-500 text-xs mt-3 font-medium">
+            ✓ MAC address saved successfully!
+          </p>
+        )}
+        {!hideButtons && (
+          <div className={`flex mt-3 ${onCancel ? "justify-between" : "justify-end"} gap-2`}>
+            {onCancel && (
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                size="sm"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={!isValid || inputValue === ""}
+              className={onCancel ? "" : "w-full"}
+              size="sm"
+            >
+              {saveButtonText || (isEditing ? "Update MAC Address" : "Save MAC Address")}
+            </Button>
+          </div>
+        )}
+        <div className="mt-3 bg-muted rounded-md p-2">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground">Note:</span> Go to <pre>chrome://bluetooth-internals</pre> to get the MAC address.
+            <a href="https://acorn221.github.io/gan-i3-356-bluetooth/" target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="link"
+                className="text-xs mt-1 p-0 h-auto"
+                rel="noopener noreferrer"
+              >
+                Example bluetooth connection page
+              </Button>
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Original full card version
   return (
     <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">CubeAuthn</CardTitle>
         <CardDescription className="text-muted-foreground">
-          {isEditing 
+          {isEditing
             ? "Change the MAC address of your Bluetooth Rubik's cube"
             : "Enter the MAC address of your Bluetooth Rubik's cube to use for WebAuthn authentication"
           }

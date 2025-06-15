@@ -1,6 +1,5 @@
 import "@/popup/styles.css"
 import { useStorage } from "@plasmohq/storage/hook"
-import { MacAddressForm } from "@/components/mac-address-form"
 import { MainView } from "@/components/main-view"
 import { CredentialsView } from "@/components/credentials-view"
 import { SettingsView } from "@/components/settings-view"
@@ -11,17 +10,15 @@ const Popup = () => {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
-  const [currentView, setCurrentView] = useState<'main' | 'setup' | 'showcase' | 'credentials' | 'settings'>('main')
+  const [currentView, setCurrentView] = useState<'main' | 'showcase' | 'credentials' | 'settings'>('main')
   const [hasMacAddress, setHasMacAddress] = useState(false)
 
   // Check if MAC address is set
   useEffect(() => {
     if (macAddress && macAddress.trim() !== "") {
       setHasMacAddress(true)
-      setCurrentView('main')
     } else {
       setHasMacAddress(false)
-      setCurrentView('setup')
     }
   }, [macAddress])
 
@@ -32,7 +29,7 @@ const Popup = () => {
           <Button
             variant="outline"
             className="mb-4"
-            onClick={() => setCurrentView(hasMacAddress ? 'main' : 'setup')}
+            onClick={() => setCurrentView('main')}
           >
             Back
           </Button>
@@ -47,15 +44,8 @@ const Popup = () => {
         <SettingsView onBack={() => setCurrentView('main')} />
       )}
 
-      {currentView === 'setup' && (
-        <>
-          <MacAddressForm onCancel={hasMacAddress ? () => setCurrentView('main') : undefined} />
-        </>
-      )}
-
       {currentView === 'main' && (
         <MainView
-          onEditMacAddress={() => setCurrentView('setup')}
           onViewShowcase={() => setCurrentView('showcase')}
           onViewCredentials={() => setCurrentView('credentials')}
           onViewSettings={() => setCurrentView('settings')}

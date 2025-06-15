@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Toggle } from "@/components/ui/toggle"
+import { MacAddressForm } from "@/components/mac-address-form"
 import { AlertTriangle } from "lucide-react"
 import * as React from "react"
 import { useCallback, useEffect, useState } from "react"
@@ -43,8 +44,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
   )
 
   return (
-    <Card className="w-[350px] border-border shadow-lg">
-      <CardHeader className="pb-2">
+    <div>
+      <Card className="w-[350px] border-border shadow-lg">
+        <CardHeader className="pb-2">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -194,11 +196,18 @@ export function SettingsView({ onBack }: SettingsViewProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter>
-        <p className="text-xs text-muted-foreground w-full text-center">
-          Settings are saved automatically
-        </p>
-      </CardFooter>
-    </Card>
+        <CardFooter>
+          <p className="text-xs text-muted-foreground w-full text-center">
+            Settings are saved automatically
+          </p>
+        </CardFooter>
+      </Card>
+      
+      <div className="mt-4">
+        <MacAddressForm
+          saveButtonText="Update MAC Address"
+        />
+      </div>
+    </div>
   )
 }

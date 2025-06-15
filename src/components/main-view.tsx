@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface MainViewProps {
-  onEditMacAddress: () => void
   onViewShowcase: () => void
   onViewCredentials: () => void
   onViewSettings: () => void
 }
 
-export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials, onViewSettings }: MainViewProps) {
+export function MainView({ onViewShowcase, onViewCredentials, onViewSettings }: MainViewProps) {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
@@ -52,13 +51,6 @@ export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials, 
           onClick={onViewCredentials}
         >
           View Stored Passkeys
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={onEditMacAddress}
-        >
-          Change MAC Address
         </Button>
         <Button
           variant="outline"
