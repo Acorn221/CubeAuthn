@@ -1,18 +1,29 @@
 import "./styles.css"
+
+import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
 import { BTCube } from "gan-i3-356-bluetooth"
+import { AlertTriangle, Lock } from "lucide-react"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { cubeSVG } from "sr-visualizer"
+
 import { useStorage } from "@plasmohq/storage/hook"
-import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
-import { Lock } from "lucide-react"
 
 import "@/components/apple-style/apple-style.css"
+
 import type { CubeHashConfig } from "@/background/types"
+import { getAllWebAuthnCredentials } from "@/background/utils"
+import { createDownloadableHTML, generateHash } from "@/utils/set-scramble"
 
 const SetScramble = () => {
   const btCube = useRef(new BTCube())
   const [isConnected, setIsConnected] = useState(false)
-  const [connectionFailed, setConnectionFailed] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [isGeneratingHash, setIsGeneratingHash] = useState(false)
+  const [hashGenerated, setHashGenerated] = useState(false)
+  const [htmlContent, setHtmlContent] = useState<string>("")
+  const [showDoneScreen, setShowDoneScreen] = useState(false)
+  const [hasExistingCredentials, setHasExistingCredentials] = useState(false)
+  const [credentialCount, setCredentialCount] = useState(0)
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   )
@@ -20,58 +31,119 @@ const SetScramble = () => {
     "macAddress",
     (x) => x || ""
   )
-	const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
-		"fixedCubeScrambleHash"
-	);
+  const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+    "fixedCubeScrambleHash"
+  )
 
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
 
   // Connect to the cube
   const connectToCube = useCallback(async () => {
-    setConnectionFailed(false)
+    let result = false;
+    setIsConnecting(true);
     try {
       await btCube.current.init(macAddress)
-      const result = btCube.current.isConnected()
+      result = btCube.current.isConnected()
       setIsConnected(result)
       if (result) {
         setFacelets(btCube.current.getCube().facelets)
       }
       console.log(`Connection result: ${result} for MAC: ${macAddress}`)
-      return result
     } catch (e) {
       console.error("Failed to initialize Bluetooth Cube:", e)
-      setConnectionFailed(true)
-      return false
+    } finally {
+      setIsConnecting(false)
     }
+
+    return result;
   }, [macAddress])
 
-  // Generate hash from cube state (placeholder for now)
-  const generateHash = useCallback(() => {
+  // Generate hash wrapper function
+  const generateCubeHash = useCallback(async () => {
     if (!isConnected) return ""
+
+    const cubeNum = btCube.current.getCube().getStateHex()
+    return await generateHash(cubeNum, setCubeScrambleHash)
+  }, [isConnected, setCubeScrambleHash])
+
+  // Handle download of the HTML file
+  const handleDownload = useCallback(() => {
+    if (!htmlContent) return;
     
-    // This is just a placeholder - actual hash generation will be implemented later
-    const cubeNum = btCube.current.getCube().getStateHex();
-		// TODO: calculate how many iterations we can do under 50ms of sha-512
-		// TODO: Then save the hash iterations and the "cubeScrambleHash" in the storage
-		// TODO: save the `setCubeScrambleHash` with the hash and iterations
-		// TODO: let the user download HTML of the hash, iterations and SVG (and cube state num)
-    return cubeNum
-  }, [isConnected])
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rubiks-cube-auth.html';
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }, [htmlContent]);
 
   // Handle confirmation of the scramble
-  const handleConfirmScramble = useCallback(() => {
-    if (!isConnected) return;
+  const handleConfirmScramble = useCallback(async () => {
+    if (!isConnected || isGeneratingHash) return
     
-    const hash = generateHash();
-    console.log("Confirmed scramble with hash:", hash);
-    
-    // Here you would typically save the hash or use it for authentication
-    // This is a placeholder for now
-    
-    // Optionally disconnect the cube after confirmation
-    // btCube.current.stop()
-  }, [isConnected, generateHash]);
+    try {
+      setIsGeneratingHash(true)
+      setHashGenerated(false)
+      
+      // Generate the hash
+      const hash = await generateCubeHash()
+      
+      if (!cubeScrambleHash) {
+        console.error("Failed to generate hash configuration")
+        setIsGeneratingHash(false)
+        return
+      }
+      
+      console.log("Confirmed scramble with hash:", hash)
+      
+      // Get the cube state number
+      const cubeNum = btCube.current.getCube().getStateHex()
+      
+      // Get the SVG content from both cube visualizations
+      const frontSvg = frontCubeRef.current?.innerHTML || ""
+      const backSvg = backCubeRef.current?.innerHTML || ""
+      
+      // Create HTML content but don't download automatically
+      const html = createDownloadableHTML(
+        cubeScrambleHash.hash,
+        cubeScrambleHash.iterations,
+        cubeScrambleHash.salt,
+        cubeNum,
+        frontSvg,
+        backSvg
+      )
+      
+      // Save the HTML content for later download
+      setHtmlContent(html)
+      
+      // Set success state
+      setHashGenerated(true)
+      setShowDoneScreen(true)
+      
+      // Optionally disconnect the cube after confirmation
+      // btCube.current.stop()
+    } catch (error) {
+      console.error("Error confirming scramble:", error)
+    } finally {
+      setIsGeneratingHash(false)
+    }
+  }, [
+    isConnected,
+    isGeneratingHash,
+    generateCubeHash,
+    cubeScrambleHash,
+    createDownloadableHTML
+  ])
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
     const colorMap: Record<string, string> = {
@@ -88,18 +160,6 @@ const SetScramble = () => {
       .map((face) => colorMap[face] || face)
       .join("")
   }, [])
-
-  // Initialize connection on component mount
-  useEffect(() => {
-    connectToCube()
-    
-    return () => {
-      // Clean up on unmount
-      if (btCube.current) {
-        btCube.current.stop()
-      }
-    }
-  }, [connectToCube])
 
   // Render front cube view
   useEffect(() => {
@@ -137,59 +197,133 @@ const SetScramble = () => {
     }
   }, [btCube.current, macAddress])
 
+  // Check for existing credentials on mount
+  useEffect(() => {
+    const checkExistingCredentials = async () => {
+      try {
+        const credentials = await getAllWebAuthnCredentials();
+        const count = Object.keys(credentials).length;
+        setCredentialCount(count);
+        setHasExistingCredentials(count > 0);
+      } catch (error) {
+        console.error("Error checking existing credentials:", error);
+      }
+    };
+
+    checkExistingCredentials();
+  }, []);
+
   return (
     <div className="h-screen w-screen bg-black flex items-center justify-center">
       <div className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-4">
         {/* Header */}
         <div className="flex cursor-default">
           <div className="flex-1 top-4 flex items-center">
-						<Lock className="size-4" />
-            <span className="text-lg font-medium ml-2">Set your Scramble</span>
+            <Lock className="size-4" />
+            <span className="text-lg font-medium ml-2">
+              {showDoneScreen ? "Scramble Saved" : "Set your Scramble"}
+            </span>
           </div>
         </div>
         <div className="w-full h-[1px] bg-[#3a3a3c] mb-2" />
-        
+
         {/* Content */}
-        <div className="px-4 flex flex-col items-center cursor-default">
-          <div className="w-14 h-14 apple-dialog-icon-container flex items-center justify-center mb-4">
-            <RubiksCubeIcon className="w-14 h-14" />
+        {!showDoneScreen ? (
+          <div className="px-4 flex flex-col items-center cursor-default">
+            <div className="w-14 h-14 apple-dialog-icon-container flex items-center justify-center mb-4">
+              <RubiksCubeIcon className="w-14 h-14" />
+            </div>
+
+            <h2 className="text-lg apple-dialog-title mb-1">Set Cube Scramble</h2>
+
+            <p className="apple-dialog-description text-center text-xs mb-4">
+              Connect your Rubik's Cube and set the scramble pattern that will be
+              used for authentication.
+            </p>
+
+            {isConnected && (
+              <div className="w-full flex cube-container mb-4">
+                <div ref={frontCubeRef as any} className="flex-1" />
+                <div ref={backCubeRef as any} className="flex-1" />
+              </div>
+            )}
+  
+            {isConnecting && (
+              <div className="text-center my-4 text-xs text-[#8e8e93]">
+                Connecting to the Cube...
+              </div>
+            )}
+  
+            {hasExistingCredentials && (
+              <div className="bg-amber-900/30 border border-amber-500/50 rounded-md p-3 mb-4 flex items-start gap-2">
+                <AlertTriangle className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-amber-200">
+                  <p className="font-medium mb-1">Warning: Existing Passkeys Detected</p>
+                  <p>
+                    You have {credentialCount} existing passkey{credentialCount !== 1 ? 's' : ''} that use the current cube scramble.
+                    Changing the scramble will make these passkeys unusable.
+                  </p>
+                  {/* TODO: Implement a migration flow to update existing passkeys with the new scramble */}
+                  {/* TODO: Add option to export existing passkeys before changing scramble */}
+                  {/* TODO: Add confirmation dialog before proceeding with scramble change */}
+                </div>
+              </div>
+            )}
+  
+            {isConnected ? (
+              <button
+                onClick={handleConfirmScramble}
+                disabled={isGeneratingHash || hasExistingCredentials}
+                className={`w-full py-3 rounded-md ${
+                  hasExistingCredentials
+                    ? "bg-[#3a3a3c] cursor-not-allowed"
+                    : isGeneratingHash
+                      ? "bg-[#0071e3]/50"
+                      : "bg-[#0071e3]"
+                } text-white font-medium text-sm`}>
+                {isGeneratingHash
+                  ? "Generating Hash..."
+                  : hasExistingCredentials
+                    ? "Cannot Change Scramble"
+                    : "Confirm Scramble"}
+              </button>
+            ) : (
+              <button
+                onClick={connectToCube}
+                className={`w-full py-3 rounded-md  ${isConnecting ? "bg-[#3a3a3c]" : "bg-[#0071e3]"} text-white font-medium text-sm`}>
+                Connect to Cube
+              </button>
+            )}
           </div>
-
-          <h2 className="text-lg apple-dialog-title mb-1">
-            Set Cube Scramble
-          </h2>
-
-          <p className="apple-dialog-description text-center text-xs mb-4">
-            Connect your Rubik's Cube and set the scramble pattern that will be used for authentication.
-          </p>
-
-          {isConnected && (
-            <div className="w-full flex cube-container mb-4">
-              <div ref={frontCubeRef as any} className="flex-1" />
-              <div ref={backCubeRef as any} className="flex-1" />
+        ) : (
+          <div className="px-4 flex flex-col items-center cursor-default">
+            <div className="w-14 h-14 apple-dialog-icon-container flex items-center justify-center mb-4 bg-green-900">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          )}
 
-          {!isConnected && !connectionFailed && (
-            <div className="text-center my-4 text-xs text-[#8e8e93]">
-              Connecting to the Cube...
-            </div>
-          )}
+            <h2 className="text-lg apple-dialog-title mb-1">
+              Scramble Saved Successfully
+            </h2>
 
-          {isConnected ? (
+            <p className="apple-dialog-description text-center text-xs mb-4">
+              Your cube scramble has been saved and can now be used for authentication.
+            </p>
+
             <button
-              onClick={handleConfirmScramble}
-              className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
-              Confirm Scramble
+              onClick={handleDownload}
+              className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm mb-3">
+              Download Configuration
             </button>
-          ) : connectionFailed ? (
+
             <button
-              onClick={connectToCube}
+              onClick={() => setShowDoneScreen(false)}
               className="w-full py-3 rounded-md bg-[#3a3a3c] text-white font-medium text-sm">
-              Connect to Cube
+              Back to Scramble
             </button>
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
