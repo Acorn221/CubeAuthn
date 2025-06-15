@@ -81,7 +81,7 @@ export function MacAddressForm({
   return (
     <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">Rubik's Cube WebAuthn</CardTitle>
+        <CardTitle className="text-xl">CubeAuthn</CardTitle>
         <CardDescription className="text-muted-foreground">
           {isEditing 
             ? "Change the MAC address of your Bluetooth Rubik's cube"

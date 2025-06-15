@@ -13,7 +13,7 @@ const IntroScreen = ({ onNext }: { onNext: () => void }) => {
   return (
     <>
       <CardHeader>
-        <CardTitle>Rubik's Cube WebAuthn</CardTitle>
+        <CardTitle>CubeAuthn</CardTitle>
         <CardDescription>
           Secure authentication with a physical Rubik's Cube
         </CardDescription>
