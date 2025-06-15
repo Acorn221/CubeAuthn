@@ -146,7 +146,7 @@ const ExplanationScreen = ({ onNext }: { onNext: () => void }) => {
             <div>
               <h3 className="text-sm font-medium mb-1">Cube Connection</h3>
               <p className="text-xs text-muted-foreground">
-                Your Rubik's Cube is now connected to the extension. The next step is to set a unique scramble pattern that will be used as your secret key.
+                Your cube is now connected to the extension. The next step is to set a unique scramble pattern that will be used as your secret key.
               </p>
             </div>
           </div>
@@ -156,7 +156,9 @@ const ExplanationScreen = ({ onNext }: { onNext: () => void }) => {
             <div>
               <h3 className="text-sm font-medium mb-1">Security Model</h3>
               <p className="text-xs text-muted-foreground">
-                The scramble pattern of your cube acts as a physical secret. When authenticating, the extension reads the current state of your cube and verifies it matches your saved pattern.
+                The scramble pattern of your cube acts as a physical secret.
+                <br />
+                There is also a configurable secret stored by default which is used in combination with the cube state to generate the private keys for WebAuthn authentication.
               </p>
             </div>
           </div>
@@ -166,7 +168,9 @@ const ExplanationScreen = ({ onNext }: { onNext: () => void }) => {
             <div>
               <h3 className="text-sm font-medium mb-1">Best Practices</h3>
               <p className="text-xs text-muted-foreground">
-                Choose a scramble pattern that's easy for you to remember but difficult for others to guess. Keep your cube in a secure location when not in use.
+                Choose a scramble pattern that's easy for you to remember but difficult for others to guess.
+                <br />
+                Remember that this is not a final secure solution, so treat it as a proof of concept.
               </p>
             </div>
           </div>
