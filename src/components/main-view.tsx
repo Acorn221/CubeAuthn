@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 interface MainViewProps {
   onEditMacAddress: () => void
   onViewShowcase: () => void
+  onViewCredentials: () => void
 }
 
-export function MainView({ onEditMacAddress, onViewShowcase }: MainViewProps) {
+export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials }: MainViewProps) {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
@@ -44,8 +45,15 @@ export function MainView({ onEditMacAddress, onViewShowcase }: MainViewProps) {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="default"
+          className="w-full"
+          onClick={onViewCredentials}
+        >
+          View Stored Passkeys
+        </Button>
+        <Button
+          variant="outline"
           className="w-full"
           onClick={onEditMacAddress}
         >

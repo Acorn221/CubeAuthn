@@ -68,3 +68,34 @@ export type SerializablePublicKeyCredential = {
         };
     };
 };
+
+/**
+ * Represents a stored WebAuthn credential for a site
+ * Contains only the data needed for verification, NOT private keys or cube state
+ */
+export interface StoredWebAuthnCredential {
+    // Unique identifier for this credential
+    id: string;
+    
+    // The site URL this credential is for
+    siteUrl: string;
+    
+    // The origin of the site (e.g., https://example.com)
+    origin: string;
+    
+    // The base64url-encoded public key
+    publicKey: string;
+    
+    // Relying Party ID
+    rpId: string;
+    
+    // User information from the credential
+    user: {
+        id: string;
+        name: string;
+        displayName: string;
+    };
+    
+    // When this credential was created
+    createdAt: number;
+}

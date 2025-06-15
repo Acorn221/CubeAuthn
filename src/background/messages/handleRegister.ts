@@ -2,7 +2,7 @@ import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { ports } from ".."
 import nacl from "tweetnacl"
 import { Storage } from "@plasmohq/storage"
-import { getSecret } from "@/background/utils"
+import { getSecret, saveWebAuthnCredential } from "@/background/utils"
 import type { InboundMessages } from "../types"
 
 export type HandleRegisterRequest = {
@@ -334,7 +334,33 @@ const handler: PlasmoMessaging.MessageHandler<
     
     console.log("✅ Generated credential with cube state:", cubeNum);
     
-    // TODO: Save the site URL and the public key to the storage (use public key to verify the cube state is correct)
+    // Save the site URL and the public key to the storage
+    // Extract user information from the publicKey options
+    const publicKeyOptions = req.body.publicKey;
+    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, await getSecret(storage));
+    
+    const user = publicKeyOptions.user ? {
+      id: b64url.encode(new Uint8Array(publicKeyOptions.user.id as ArrayBuffer)),
+      name: publicKeyOptions.user.name || "",
+      displayName: publicKeyOptions.user.displayName || ""
+    } : {
+      id: "unknown",
+      name: "Unknown User",
+      displayName: "Unknown User"
+    };
+    
+    // Save the credential to storage
+    await saveWebAuthnCredential({
+      storage,
+      credential,
+      siteUrl: req.body.url,
+      origin,
+      rpId: publicKeyOptions.rp.id || origin,
+      user,
+      publicKey: naclKeyPair.publicKey
+    });
+    
+    console.log("✅ Saved credential for site:", req.body.url, "with ID:", credential.id);
     
     res.send({
       credential,
