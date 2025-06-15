@@ -8,9 +8,10 @@ interface MainViewProps {
   onEditMacAddress: () => void
   onViewShowcase: () => void
   onViewCredentials: () => void
+  onViewSettings: () => void
 }
 
-export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials }: MainViewProps) {
+export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials, onViewSettings }: MainViewProps) {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
@@ -58,6 +59,13 @@ export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials }
           onClick={onEditMacAddress}
         >
           Change MAC Address
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={onViewSettings}
+        >
+          Settings
         </Button>
       </CardFooter>
     </Card>

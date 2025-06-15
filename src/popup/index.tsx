@@ -3,6 +3,7 @@ import { useStorage } from "@plasmohq/storage/hook"
 import { MacAddressForm } from "@/components/mac-address-form"
 import { MainView } from "@/components/main-view"
 import { CredentialsView } from "@/components/credentials-view"
+import { SettingsView } from "@/components/settings-view"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 
@@ -10,7 +11,7 @@ const Popup = () => {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
-  const [currentView, setCurrentView] = useState<'main' | 'setup' | 'showcase' | 'credentials'>('main')
+  const [currentView, setCurrentView] = useState<'main' | 'setup' | 'showcase' | 'credentials' | 'settings'>('main')
   const [hasMacAddress, setHasMacAddress] = useState(false)
 
   // Check if MAC address is set
@@ -42,6 +43,10 @@ const Popup = () => {
         <CredentialsView onBack={() => setCurrentView('main')} />
       )}
 
+      {currentView === 'settings' && (
+        <SettingsView onBack={() => setCurrentView('main')} />
+      )}
+
       {currentView === 'setup' && (
         <>
           <MacAddressForm onCancel={hasMacAddress ? () => setCurrentView('main') : undefined} />
@@ -53,6 +58,7 @@ const Popup = () => {
           onEditMacAddress={() => setCurrentView('setup')}
           onViewShowcase={() => setCurrentView('showcase')}
           onViewCredentials={() => setCurrentView('credentials')}
+          onViewSettings={() => setCurrentView('settings')}
         />
       )}
     </div>

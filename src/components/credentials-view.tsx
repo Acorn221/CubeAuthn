@@ -1,10 +1,12 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { Storage } from "@plasmohq/storage"
+import { useStorage } from "@plasmohq/storage/hook"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { StoredWebAuthnCredential } from "@/background/types"
+import { getConfiguredStorage } from "@/background/utils"
 
 interface CredentialsViewProps {
   onBack: () => void
@@ -18,7 +20,7 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
     const fetchCredentials = async () => {
       setLoading(true)
       try {
-        const storage = new Storage({ area: "sync" })
+        const storage = await getConfiguredStorage()
         const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
         setCredentials(storedCredentials)
       } catch (error) {
@@ -37,7 +39,7 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
 
   const handleDeleteCredential = async (id: string) => {
     try {
-      const storage = new Storage({ area: "sync" })
+      const storage = await getConfiguredStorage()
       const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
       
       // Remove the credential
