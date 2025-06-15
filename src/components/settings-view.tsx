@@ -1,4 +1,4 @@
-import type { CubeHashConfig } from "@/background/types"
+import type { CubeHashConfig, StoredWebAuthnCredential } from "@/background/types"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -43,6 +43,18 @@ export function SettingsView({ onBack }: SettingsViewProps) {
     (v: "local" | "sync" | undefined) => (v === undefined ? "sync" : v)
   )
 
+  // Get credentials using the storage hook
+  const [credentials] = useStorage<StoredWebAuthnCredential[]>(
+    "webauthn_credentials",
+    (v) => v || []
+  )
+
+  // Set passkeysExist based on credentials
+  const [passkeysExist, setPasskeysExist] = useState(false)
+  useEffect(() => {
+    setPasskeysExist(credentials.length > 0)
+  }, [credentials])
+
   return (
     <div>
       <Card className="w-[350px] border-border shadow-lg">
@@ -75,6 +87,21 @@ export function SettingsView({ onBack }: SettingsViewProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Warning message if passkeys exist */}
+          {passkeysExist && (
+            <div className="bg-amber-900/30 border border-amber-500/50 rounded-md p-3 mb-4 flex items-start gap-4">
+              <AlertTriangle className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
+              <div className="text-md text-amber-200">
+                <p className="mb-1 font-bold">
+                  Security Settings Locked
+                </p>
+                <p className="text-sm">
+                  You cannot change security settings after passkeys have been generated.
+                  Delete all passkeys first if you need to change these settings.
+                </p>
+              </div>
+            </div>
+          )}
           {/* Same Cube Scramble Setting */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -84,8 +111,10 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               <Toggle
                 id="same-scramble"
                 pressed={useSameCubeScramble}
-                onPressedChange={setUseSameCubeScramble}
+                onPressedChange={(pressed) => !passkeysExist && setUseSameCubeScramble(pressed)}
                 aria-label="Toggle same cube scramble"
+                disabled={passkeysExist}
+                className={passkeysExist ? "opacity-60" : ""}
                 variant="outline">
                 {useSameCubeScramble ? "On" : "Off"}
               </Toggle>
@@ -140,8 +169,10 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               <Toggle
                 id="use-secret"
                 pressed={useStoredSecretEntropy}
-                onPressedChange={setUseStoredSecretEntropy}
+                onPressedChange={(pressed) => !passkeysExist && setUseStoredSecretEntropy(pressed)}
                 aria-label="Toggle use stored secret entropy"
+                disabled={passkeysExist}
+                className={passkeysExist ? "opacity-60" : ""}
                 variant="outline">
                 {useStoredSecretEntropy ? "On" : "Off"}
               </Toggle>
@@ -159,8 +190,8 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               <Label className="font-medium">Storage Area</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div
-                  className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${storageArea === "sync" ? "border-primary bg-primary/10" : "border-input"}`}
-                  onClick={() => setStorageArea("sync")}>
+                  className={`flex items-center justify-center rounded-md border p-2 ${passkeysExist ? 'opacity-60' : 'cursor-pointer'} ${storageArea === "sync" ? "border-primary bg-primary/10" : "border-input"}`}
+                  onClick={() => !passkeysExist && setStorageArea("sync")}>
                   <div className="text-center">
                     <div className="font-medium">Sync</div>
                     <div className="text-xs text-muted-foreground">
@@ -169,8 +200,8 @@ export function SettingsView({ onBack }: SettingsViewProps) {
                   </div>
                 </div>
                 <div
-                  className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${storageArea === "local" ? "border-primary bg-primary/10" : "border-input"}`}
-                  onClick={() => setStorageArea("local")}>
+                  className={`flex items-center justify-center rounded-md border p-2 ${passkeysExist ? 'opacity-60' : 'cursor-pointer'} ${storageArea === "local" ? "border-primary bg-primary/10" : "border-input"}`}
+                  onClick={() => !passkeysExist && setStorageArea("local")}>
                   <div className="text-center">
                     <div className="font-medium">Local</div>
                     <div className="text-xs text-muted-foreground">
@@ -179,19 +210,19 @@ export function SettingsView({ onBack }: SettingsViewProps) {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <strong>Sync:</strong> Passkeys are synced across all your
-                devices where you're signed in with the same browser account.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <strong>Local:</strong> Passkeys are stored only on this device
-                and won't be available on other devices.
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                <strong>Note:</strong> Changing this setting will not migrate
-                existing passkeys. New passkeys will be stored in the selected
-                area.
-              </p>
+              {!passkeysExist && (
+                <>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <strong>Sync:</strong> Your secret will be synced across all your
+                    devices where you're signed in with the same browser account.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Local:</strong> Your secret will be stored only on this device
+                    and won't be available on other devices.
+                  </p>
+                </>
+              )}
+              
             </div>
           )}
         </div>

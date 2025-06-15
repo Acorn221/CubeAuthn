@@ -31,7 +31,7 @@ export const getUseStoredSecretEntropy = async (): Promise<boolean> => {
 /**
  * Creates a storage instance with the configured area
  */
-export const getConfiguredStorage = async (): Promise<Storage> => {
+export const getSecretStorage = async (): Promise<Storage> => {
 	const area = await getStorageArea();
 	return new Storage({ area });
 }
@@ -50,7 +50,7 @@ export const getSecret = async (
 	}
 
 	if(!storage) {
-		storage = await getConfiguredStorage();
+		storage = await getSecretStorage();
 	}
 
 	const secret = await storage.get<string>("secret");
@@ -91,7 +91,7 @@ export const saveWebAuthnCredential = async ({
 	publicKey: Uint8Array;
 }) => {
 	if (!storage) {
-		storage = await getConfiguredStorage();
+		storage = new Storage({ area: "sync" });
 	}
 
 	// Convert public key to base64url string for storage
@@ -134,7 +134,7 @@ export const getWebAuthnCredential = async (
 	storage?: Storage
 ) => {
 	if (!storage) {
-		storage = await getConfiguredStorage();
+		storage = new Storage({ area: "sync" });
 	}
 	
 	const credentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || [];
@@ -148,7 +148,7 @@ export const getAllWebAuthnCredentials = async (
 	storage?: Storage
 ) => {
 	if (!storage) {
-		storage = await getConfiguredStorage();
+		storage = new Storage({ area: "sync" });
 	}
 	
 	return await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || [];
