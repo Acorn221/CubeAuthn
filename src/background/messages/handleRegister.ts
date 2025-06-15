@@ -80,7 +80,7 @@ const b64url = {
  * Note: Using 'any' type here is necessary because of the recursive nature of CBOR data.
  * TypeScript cannot properly type check recursive structures like this without excessive complexity.
  */
-function encodeCBOR(val: any): Uint8Array {
+const encodeCBOR = (val: any): Uint8Array => {
   try {
     if (val instanceof Uint8Array) {
       const len = val.length;
@@ -150,9 +150,6 @@ function encodeCBOR(val: any): Uint8Array {
   }
 }
 
-// Secret key for additional entropy (store this securely in production)
-const SECRET_KEY = "your-secret-key-here-replace-with-secure-value";
-
 /**
  * Result of key pair generation
  */
@@ -164,9 +161,9 @@ interface KeyPairResult {
 /**
  * Generates a deterministic key pair from cube state and secret
  */
-const generateKeyPairFromCube = async (cubeNum: string, secret: string): Promise<KeyPairResult> => {
+const generateKeyPairFromCube = async (cubeNum: string, secret?: string): Promise<KeyPairResult> => {
   // Create entropy from cube state and secret
-  const entropy = `${cubeNum}-${secret}`;
+  const entropy = secret ? `${cubeNum}${secret}` : cubeNum.padEnd(32, '0');;
   const entropyBytes = new TextEncoder().encode(entropy);
   
   // Generate deterministic seed
@@ -219,7 +216,7 @@ const createFakeCredentialIntercept = async ({
 }: {
   publicKey: PublicKeyCredentialCreationOptions,
   cubeNum: string,
-  secret: string,
+  secret?: string,
   origin: string,
 }): Promise<WebAuthnCredential> => {
   // Extract challenge and relying party info
@@ -322,13 +319,25 @@ const handler: PlasmoMessaging.MessageHandler<
 
     console.log("⏳ Creating WebAuthn credential with cube state:", cubeNum);
 
-    const storage = new Storage({ area: "sync" });
+    // Get settings
+    const storage = new Storage();
+    const storageArea = await storage.get<"local" | "sync">("storageArea") || "sync";
+    const useSameCubeScramble = await storage.get<boolean>("useSameCubeScramble") || false;
+    const useStoredSecretEntropy = await storage.get<boolean>("useStoredSecretEntropy") || true;
+    
+    // Use the appropriate storage area based on settings
+    const credentialStorage = new Storage({ area: storageArea });
+    
+    // Use fixed cube scramble if enabled and available
+    
+    console.log("⏳ Using cube state:", useSameCubeScramble ? "fixed scramble" : "current scramble");
+    console.log("⏳ Using stored secret entropy:", useStoredSecretEntropy ? "yes" : "no");
     
     // Create WebAuthn credential using the cube state
     const credential = await createFakeCredentialIntercept({
       publicKey: req.body.publicKey,
       cubeNum,
-      secret: await getSecret(storage),
+      secret: await getSecret(credentialStorage),
       origin,
     });
     
@@ -337,7 +346,10 @@ const handler: PlasmoMessaging.MessageHandler<
     // Save the site URL and the public key to the storage
     // Extract user information from the publicKey options
     const publicKeyOptions = req.body.publicKey;
-    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, await getSecret(storage));
+    const { naclKeyPair } = await generateKeyPairFromCube(
+      cubeNum,
+      await getSecret(credentialStorage)
+    );
     
     const user = publicKeyOptions.user ? {
       id: b64url.encode(new Uint8Array(publicKeyOptions.user.id as ArrayBuffer)),
@@ -351,7 +363,7 @@ const handler: PlasmoMessaging.MessageHandler<
     
     // Save the credential to storage
     await saveWebAuthnCredential({
-      storage,
+      storage: credentialStorage,
       credential,
       siteUrl: req.body.url,
       origin,

@@ -22,7 +22,7 @@ export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials, 
   };
 
   return (
-    <Card className="w-[300px] border-border shadow-lg">
+    <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">Rubik's Cube WebAuthn</CardTitle>
         <CardDescription className="text-muted-foreground">

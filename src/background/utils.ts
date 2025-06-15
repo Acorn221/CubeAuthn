@@ -21,6 +21,14 @@ export const getStorageArea = async (): Promise<"local" | "sync"> => {
 }
 
 /**
+ * Gets whether to use stored secret entropy
+ */
+export const getUseStoredSecretEntropy = async (): Promise<boolean> => {
+	const storage = new Storage({ area: "sync" }); // Setting stored in sync
+	return await storage.get<boolean>("useStoredSecretEntropy") ?? true;
+}
+
+/**
  * Creates a storage instance with the configured area
  */
 export const getConfiguredStorage = async (): Promise<Storage> => {
@@ -28,9 +36,19 @@ export const getConfiguredStorage = async (): Promise<Storage> => {
 	return new Storage({ area });
 }
 
+/**
+ * Gets the secret entropy used for key generation
+ * If useStoredSecretEntropy is false, returns an empty string
+ */
 export const getSecret = async (
 	storage?: Storage,
-) => {
+): Promise<string | undefined> => {
+	// Check if we should use stored secret entropy
+	const useStoredSecretEntropy = await getUseStoredSecretEntropy();
+	if (!useStoredSecretEntropy) {
+		return undefined;
+	}
+
 	if(!storage) {
 		storage = await getConfiguredStorage();
 	}

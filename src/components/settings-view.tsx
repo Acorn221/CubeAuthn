@@ -1,11 +1,12 @@
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Toggle } from "@/components/ui/toggle"
 
 interface SettingsViewProps {
   onBack: () => void
@@ -14,27 +15,61 @@ interface SettingsViewProps {
 export function SettingsView({ onBack }: SettingsViewProps) {
   // Settings state
   const [useSameCubeScramble, setUseSameCubeScramble] = useStorage(
-    'useSameCubeScramble', 
+    'useSameCubeScramble',
     (v: boolean | undefined) => v === undefined ? false : v
   )
   
-  const [secretStorageArea, setSecretStorageArea] = useStorage(
-    'secretStorageArea',
+  const [useStoredSecretEntropy, setUseStoredSecretEntropy] = useStorage(
+    'useStoredSecretEntropy',
+    (v: boolean | undefined) => v === undefined ? true : v
+  )
+  
+  const [fixedCubeScramble, setFixedCubeScramble] = useStorage(
+    'fixedCubeScramble',
+    (v: string | undefined) => v === undefined ? "" : v
+  )
+  
+  const [storageArea, setStorageArea] = useStorage(
+    'storageArea',
     (v: "local" | "sync" | undefined) => v === undefined ? "sync" : v
   )
 
-  // Handle toggle for using same cube scramble
-  const handleToggleSameCubeScramble = () => {
-    setUseSameCubeScramble(!useSameCubeScramble)
-  }
+  // This function is kept for the useEffect but not exposed to the UI
+  const generateNewScramble = useCallback(() => {
+    const randomScramble = Array.from(
+      { length: 48 },
+      () => Math.floor(Math.random() * 16).toString(16)
+    ).join('')
+    
+    setFixedCubeScramble(randomScramble)
+  }, [setFixedCubeScramble])
+
+  // Generate a random cube scramble if none exists
+  useEffect(() => {
+    if (useSameCubeScramble && !fixedCubeScramble) {
+      generateNewScramble()
+    }
+  }, [useSameCubeScramble, fixedCubeScramble, setFixedCubeScramble, generateNewScramble])
 
   return (
-    <Card className="w-[300px] border-border shadow-lg">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">Settings</CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Configure your Rubik's Cube WebAuthn extension
-        </CardDescription>
+    <Card className="w-[350px] border-border shadow-lg">
+      <CardHeader className="pb-2">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-2 h-8 w-8 p-0"
+            onClick={onBack}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            <span className="sr-only">Back</span>
+          </Button>
+          <div>
+            <CardTitle className="text-xl">Settings</CardTitle>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -42,19 +77,37 @@ export function SettingsView({ onBack }: SettingsViewProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="same-scramble" className="font-medium">Use same cube scramble</Label>
-              <div className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
-                bg-input data-[state=checked]:bg-primary"
-                data-state={useSameCubeScramble ? "checked" : "unchecked"}
-                onClick={handleToggleSameCubeScramble}
+              <Toggle
                 id="same-scramble"
-                role="switch"
-                aria-checked={useSameCubeScramble}
+                pressed={useSameCubeScramble}
+                onPressedChange={setUseSameCubeScramble}
+                aria-label="Toggle same cube scramble"
+                variant="outline"
               >
-                <span className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${useSameCubeScramble ? 'translate-x-5' : 'translate-x-0'}`} />
-              </div>
+                {useSameCubeScramble ? "On" : "Off"}
+              </Toggle>
             </div>
             <p className="text-xs text-muted-foreground">
               When enabled, the same cube scramble will be used for all passkeys. This means you'll solve the same pattern every time.
+            </p>
+          </div>
+
+          {/* Use Stored Secret Entropy Setting */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="use-secret" className="font-medium">Use stored secret entropy</Label>
+              <Toggle
+                id="use-secret"
+                pressed={useStoredSecretEntropy}
+                onPressedChange={setUseStoredSecretEntropy}
+                aria-label="Toggle use stored secret entropy"
+                variant="outline"
+              >
+                {useStoredSecretEntropy ? "On" : "Off"}
+              </Toggle>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              When enabled, the cube state is combined with a stored secret for additional security. When disabled, only the raw cube state is used.
             </p>
           </div>
 
@@ -62,18 +115,18 @@ export function SettingsView({ onBack }: SettingsViewProps) {
           <div className="space-y-2">
             <Label className="font-medium">Storage Area</Label>
             <div className="grid grid-cols-2 gap-2">
-              <div 
-                className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${secretStorageArea === 'sync' ? 'border-primary bg-primary/10' : 'border-input'}`}
-                onClick={() => setSecretStorageArea('sync')}
+              <div
+                className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${storageArea === 'sync' ? 'border-primary bg-primary/10' : 'border-input'}`}
+                onClick={() => setStorageArea('sync')}
               >
                 <div className="text-center">
                   <div className="font-medium">Sync</div>
                   <div className="text-xs text-muted-foreground">Across devices</div>
                 </div>
               </div>
-              <div 
-                className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${secretStorageArea === 'local' ? 'border-primary bg-primary/10' : 'border-input'}`}
-                onClick={() => setSecretStorageArea('local')}
+              <div
+                className={`flex items-center justify-center rounded-md border p-2 cursor-pointer ${storageArea === 'local' ? 'border-primary bg-primary/10' : 'border-input'}`}
+                onClick={() => setStorageArea('local')}
               >
                 <div className="text-center">
                   <div className="font-medium">Local</div>
@@ -82,10 +135,10 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              <strong>Sync:</strong> Your secret entropy key is synced across all devices using this extension. This secret key is required alongside the cube scramble to generate passkeys.
+              <strong>Sync:</strong> Passkeys are synced across all your devices where you're signed in with the same browser account.
             </p>
             <p className="text-xs text-muted-foreground">
-              <strong>Local:</strong> Your secret entropy key is only stored on this device. This means passkeys will only work here with the correct cube scramble.
+              <strong>Local:</strong> Passkeys are stored only on this device and won't be available on other devices.
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               <strong>Note:</strong> Changing this setting will not migrate existing passkeys. New passkeys will be stored in the selected area.
@@ -94,13 +147,9 @@ export function SettingsView({ onBack }: SettingsViewProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={onBack}
-        >
-          Back
-        </Button>
+        <p className="text-xs text-muted-foreground w-full text-center">
+          Settings are saved automatically
+        </p>
       </CardFooter>
     </Card>
   )
