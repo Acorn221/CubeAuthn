@@ -103,7 +103,7 @@ export const generateKeyPairFromCube = async (
   const keyMaterialBytes = new TextEncoder().encode(keyMaterial);
   
   // Use PBKDF2 for key derivation (more secure than simple hashing)
-  const salt = new TextEncoder().encode(`passkey-salt-${finalRandomId}`);
+  const salt = new TextEncoder().encode(finalRandomId);
   
   // Import key material for PBKDF2
   const importedKey = await crypto.subtle.importKey(
@@ -118,7 +118,7 @@ export const generateKeyPairFromCube = async (
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt: salt,
+      salt,
       iterations: ITERATIONS,
       hash: "SHA-512"
     },
