@@ -2,10 +2,10 @@ import * as React from "react"
 import { useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 
-import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface MacAddressFormProps {
   onCancel?: () => void;
@@ -46,7 +46,7 @@ export function MacAddressForm({ onCancel }: MacAddressFormProps) {
   };
 
   return (
-    <Card className="w-[300px] border-border shadow-lg">
+    <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">Rubik's Cube WebAuthn</CardTitle>
         <CardDescription className="text-muted-foreground">

@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 interface MainViewProps {
   onEditMacAddress: () => void
   onViewShowcase: () => void
+  onViewCredentials: () => void
+  onViewSettings: () => void
 }
 
-export function MainView({ onEditMacAddress, onViewShowcase }: MainViewProps) {
+export function MainView({ onEditMacAddress, onViewShowcase, onViewCredentials, onViewSettings }: MainViewProps) {
   const [macAddress] = useStorage('macAddress', (x: string | undefined) =>
     x === undefined ? "" : x,
   );
@@ -20,7 +22,7 @@ export function MainView({ onEditMacAddress, onViewShowcase }: MainViewProps) {
   };
 
   return (
-    <Card className="w-[300px] border-border shadow-lg">
+    <Card className="w-[350px] border-border shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">Rubik's Cube WebAuthn</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -44,12 +46,26 @@ export function MainView({ onEditMacAddress, onViewShowcase }: MainViewProps) {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="default"
+          className="w-full"
+          onClick={onViewCredentials}
+        >
+          View Stored Passkeys
+        </Button>
+        <Button
+          variant="outline"
           className="w-full"
           onClick={onEditMacAddress}
         >
           Change MAC Address
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={onViewSettings}
+        >
+          Settings
         </Button>
       </CardFooter>
     </Card>
