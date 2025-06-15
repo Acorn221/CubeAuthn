@@ -2,7 +2,7 @@ import "./styles.css"
 
 import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
 import { BTCube } from "gan-i3-356-bluetooth"
-import { AlertTriangle, Lock } from "lucide-react"
+import { AlertTriangle, ChevronLeft, Lock, X } from "lucide-react"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cubeSVG } from "sr-visualizer"
 
@@ -20,6 +20,12 @@ const SetScramble = () => {
   const [isGeneratingHash, setIsGeneratingHash] = useState(false)
   const [htmlContent, setHtmlContent] = useState<string>("")
   const [showDoneScreen, setShowDoneScreen] = useState(false)
+  
+  // Handle closing the dialog
+  const handleClose = useCallback(() => {
+    setShowDoneScreen(false)
+    // If you need to do any cleanup when closing, add it here
+  }, [])
   
   // Use the storage hook to get WebAuthn credentials
   const [webAuthnCredentials] = useStorage<Record<string, StoredWebAuthnCredential>>(
@@ -42,6 +48,11 @@ const SetScramble = () => {
   
   const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
     "fixedCubeScrambleHash"
+  )
+  
+  // Store the calculated PBKDF2 iterations to avoid recalculating
+  const [targetIterations, setTargetIterations] = useStorage<number | undefined>(
+    "targetIterations",
   )
 
   const frontCubeRef = useRef<HTMLDivElement>()
@@ -73,8 +84,13 @@ const SetScramble = () => {
     if (!isConnected) return ""
 
     const cubeNum = btCube.current.getCube().getStateHex()
-    return await generateHash(cubeNum, setCubeScrambleHash)
-  }, [isConnected, setCubeScrambleHash])
+    return await generateHash(
+      cubeNum,
+      setCubeScrambleHash,
+      targetIterations,
+      setTargetIterations
+    )
+  }, [isConnected, setCubeScrambleHash, targetIterations, setTargetIterations])
 
   // Handle download of the HTML file
   const handleDownload = useCallback(() => {
@@ -317,16 +333,25 @@ const SetScramble = () => {
               Your cube scramble has been saved and can now be used for authentication.
             </p>
 
-            <button
-              onClick={handleDownload}
-              className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm mb-3">
-              Download Configuration
-            </button>
+            <div className="flex w-full gap-2 mb-3">
+              <button
+                onClick={() => setShowDoneScreen(false)}
+                className="py-3 px-4 rounded-md bg-[#3a3a3c] text-white font-medium text-sm flex items-center">
+                <ChevronLeft className="size-4 mr-1" />
+                Back
+              </button>
+              <button
+                onClick={handleDownload}
+                className="flex-1 py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
+                Download Configuration
+              </button>
+            </div>
 
             <button
-              onClick={() => setShowDoneScreen(false)}
-              className="w-full py-3 rounded-md bg-[#3a3a3c] text-white font-medium text-sm">
-              Back to Scramble
+              onClick={handleClose}
+              className="w-full py-3 rounded-md bg-[#3a3a3c] text-white font-medium text-sm flex items-center justify-center">
+              <X className="size-4 mr-1" />
+              Close
             </button>
           </div>
         )}
