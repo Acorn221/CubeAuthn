@@ -7,10 +7,10 @@ export const calculateIterations = async (): Promise<number> => {
   const testData = new TextEncoder().encode("test");
   const testSalt = crypto.getRandomValues(new Uint8Array(16));
   const iterations = [];
-  const targetTime = 50; // ms
+  const targetTimeMs = 50;
   
   // Start with a higher baseline of iterations since PBKDF2 is optimized
-  const testIterations = [50000, 100000, 150000, 200000, 250000];
+  const testIterations = [50000, 100000, 150000, 200000, 250000, 300000, 500000];
   
   // Import the test data as key material
   const keyMaterial = await crypto.subtle.importKey(
@@ -33,26 +33,23 @@ export const calculateIterations = async (): Promise<number> => {
         hash: 'SHA-512'
       },
       keyMaterial,
-      512 // 64 bytes output
+      256 // 32 bytes output
     );
     
     const end = performance.now();
     const duration = end - start;
     
     iterations.push({ iterations: iterCount, duration });
-    console.log(`PBKDF2 with ${iterCount} iterations took ${duration.toFixed(2)}ms`);
     
-    if (duration > targetTime) {
+    if (duration > targetTimeMs) {
       break;
     }
   }
   
   // Find the highest iteration count under 50ms
   const safeIterations = iterations
-    .filter(item => item.duration < targetTime)
+    .filter(item => item.duration < targetTimeMs)
     .pop()?.iterations || 100000;
-    
-  console.log(`Safe PBKDF2 iterations under 50ms: ${safeIterations}`);
   return safeIterations;
 };
 
@@ -133,13 +130,7 @@ export const generateHash = async (
       salt,
       hash
     });
-    
-    console.log("PBKDF2 hash generated and saved:", {
-      iterations,
-      salt,
-      hash: hash.substring(0, 16) + "..." // Log only part of the hash for brevity
-    });
-    
+
     return hash;
   } catch (error) {
     console.error("Error generating hash:", error);

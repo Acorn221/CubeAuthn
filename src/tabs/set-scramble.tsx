@@ -168,27 +168,29 @@ const SetScramble = () => {
       .join("")
   }, [])
 
-  // Render front cube view
-  useEffect(() => {
-    if (frontCubeRef.current) {
-      frontCubeRef.current.innerHTML = ""
+  // Render a single cube view
+  const renderCubeView = useCallback((ref: React.MutableRefObject<HTMLDivElement | undefined>, rotation: string) => {
+    if (ref.current) {
+      ref.current.innerHTML = "";
       cubeSVG(
-        frontCubeRef.current,
-        `r=x-270y-225x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
-      )
+        ref.current,
+        `r=${rotation}&size=300&fc=${convertCubeFormat(facelets)}` as any
+      );
     }
-  }, [frontCubeRef.current, facelets, convertCubeFormat, isConnected])
+  }, [facelets, convertCubeFormat]);
 
-  // Render back cube view
+  // Render both cube views
+  const renderCubeViews = useCallback(() => {
+    renderCubeView(frontCubeRef, "x-270y-225x-20");
+    renderCubeView(backCubeRef, "x-90y-135x-20");
+  }, [renderCubeView, frontCubeRef, backCubeRef]);
+
+  // Unified effect to render cube views when needed
   useEffect(() => {
-    if (backCubeRef.current) {
-      backCubeRef.current.innerHTML = ""
-      cubeSVG(
-        backCubeRef.current,
-        `r=x-90y-135x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
-      )
+    if (isConnected) {
+      renderCubeViews();
     }
-  }, [backCubeRef.current, facelets, convertCubeFormat, isConnected])
+  }, [isConnected, renderCubeViews, showDoneScreen, facelets]);
 
   // Listen for cube state changes
   useEffect(() => {
@@ -242,6 +244,19 @@ const SetScramble = () => {
             {isConnecting && (
               <div className="text-center my-4 text-xs text-[#8e8e93]">
                 Connecting to the Cube...
+              </div>
+            )}
+
+            {cubeScrambleHash && (
+              <div className="bg-blue-900/30 border border-blue-500/50 rounded-md p-3 mb-4 flex items-start gap-2">
+                <AlertTriangle className="text-blue-500 size-4 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-200">
+                  <p className="font-medium mb-1">Existing Scramble Detected</p>
+                  <p>
+                    You already have a saved cube scramble. Changing it will replace your current scramble configuration.
+                  </p>
+                  {/* TODO: Add option to export existing scramble before changing */}
+                </div>
               </div>
             )}
   
