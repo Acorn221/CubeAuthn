@@ -15,8 +15,8 @@ interface CombinedViewProps {
 }
 
 export function CombinedView({ onViewSettings }: CombinedViewProps) {
-  const [credentials, setCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
-  const [filteredCredentials, setFilteredCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
+  const [credentials, setCredentials] = useState<StoredWebAuthnCredential[]>([])
+  const [filteredCredentials, setFilteredCredentials] = useState<StoredWebAuthnCredential[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
 
@@ -25,7 +25,7 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
       setLoading(true)
       try {
         const storage = await getConfiguredStorage()
-        const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
+        const storedCredentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || []
         setCredentials(storedCredentials)
         setFilteredCredentials(storedCredentials)
       } catch (error) {
@@ -46,15 +46,12 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
     }
 
     const term = searchTerm.toLowerCase()
-    const filtered = Object.entries(credentials).reduce((acc, [id, credential]) => {
+    const filtered = credentials.filter(credential => {
       const hostname = new URL(credential.siteUrl).hostname.toLowerCase()
       const username = (credential.user.name || credential.user.displayName || "").toLowerCase()
       
-      if (hostname.includes(term) || username.includes(term)) {
-        acc[id] = credential
-      }
-      return acc
-    }, {} as Record<string, StoredWebAuthnCredential>)
+      return hostname.includes(term) || username.includes(term)
+    })
     
     setFilteredCredentials(filtered)
   }, [searchTerm, credentials])
@@ -66,16 +63,16 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
   const handleDeleteCredential = async (id: string) => {
     try {
       const storage = await getConfiguredStorage()
-      const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
+      const storedCredentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || []
       
       // Remove the credential
-      delete storedCredentials[id]
+      const updatedCredentials = storedCredentials.filter(cred => cred.id !== id)
       
       // Update storage
-      await storage.set("webauthn_credentials", storedCredentials)
+      await storage.set("webauthn_credentials", updatedCredentials)
       
       // Update state
-      setCredentials(storedCredentials)
+      setCredentials(updatedCredentials)
     } catch (error) {
       console.error("Error deleting credential:", error)
     }
@@ -106,7 +103,7 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
       <CardContent className="space-y-4">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading passkeys...</p>
-        ) : Object.keys(credentials).length === 0 ? (
+        ) : credentials.length === 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">No passkeys stored yet.</p>
             <div className="p-3 bg-muted rounded-md">
@@ -142,13 +139,13 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
               )}
             </div>
             
-            {Object.keys(filteredCredentials).length === 0 ? (
+            {filteredCredentials.length === 0 ? (
               <p className="text-sm text-muted-foreground">No matching passkeys found.</p>
             ) : (
               <ScrollArea className="h-[240px] rounded-md">
                 <div className="space-y-2 pr-3">
-                  {Object.entries(filteredCredentials).map(([id, credential]) => (
-                <div key={id} className="p-3 bg-muted rounded-md">
+                  {filteredCredentials.map((credential) => (
+                <div key={credential.id} className="p-3 bg-muted rounded-md">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{new URL(credential.siteUrl).hostname}</p>
@@ -159,7 +156,7 @@ export function CombinedView({ onViewSettings }: CombinedViewProps) {
                       variant="destructive" 
                       size="sm"
                       className="h-6 bg-destructive hover:bg-destructive/90"
-                      onClick={() => handleDeleteCredential(id)}
+                      onClick={() => handleDeleteCredential(credential.id)}
                     >
                       <Trash2 className="size-4" />
                     </Button>

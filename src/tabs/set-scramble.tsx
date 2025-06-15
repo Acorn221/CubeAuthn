@@ -33,13 +33,13 @@ const SetScramble = () => {
 
   // Use the storage hook to get WebAuthn credentials
   const [webAuthnCredentials] = useStorage<
-    Record<string, StoredWebAuthnCredential>
+    StoredWebAuthnCredential[]
   >("webauthn_credentials")
 
   // Use useMemo to calculate derived state
   const credentialCount = useMemo(() => {
     console.log(`WebAuthn credentials:`, webAuthnCredentials)
-    return Object.keys(webAuthnCredentials || {}).length
+    return (webAuthnCredentials || []).length
   }, [webAuthnCredentials])
 
   const [facelets, setFacelets] = useState(

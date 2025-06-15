@@ -115,10 +115,10 @@ export const saveWebAuthnCredential = async ({
 	};
 
 	// Get existing credentials
-	const existingCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {};
+	const existingCredentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || [];
 	
 	// Add new credential
-	existingCredentials[credential.id] = storedCredential;
+	existingCredentials.push(storedCredential);
 	
 	// Save to storage
 	await storage.set("webauthn_credentials", existingCredentials);
@@ -137,8 +137,8 @@ export const getWebAuthnCredential = async (
 		storage = await getConfiguredStorage();
 	}
 	
-	const credentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {};
-	return credentials[credentialId];
+	const credentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || [];
+	return credentials.find(cred => cred.id === credentialId);
 }
 
 /**
@@ -151,5 +151,5 @@ export const getAllWebAuthnCredentials = async (
 		storage = await getConfiguredStorage();
 	}
 	
-	return await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {};
+	return await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || [];
 }

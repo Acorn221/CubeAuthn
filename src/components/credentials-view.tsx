@@ -15,8 +15,8 @@ interface CredentialsViewProps {
 }
 
 export function CredentialsView({ onBack }: CredentialsViewProps) {
-  const [credentials, setCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
-  const [filteredCredentials, setFilteredCredentials] = useState<Record<string, StoredWebAuthnCredential>>({})
+  const [credentials, setCredentials] = useState<StoredWebAuthnCredential[]>([])
+  const [filteredCredentials, setFilteredCredentials] = useState<StoredWebAuthnCredential[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
 
@@ -25,7 +25,7 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
       setLoading(true)
       try {
         const storage = await getConfiguredStorage()
-        const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
+        const storedCredentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || []
         setCredentials(storedCredentials)
         setFilteredCredentials(storedCredentials)
       } catch (error) {
@@ -46,15 +46,12 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
     }
 
     const term = searchTerm.toLowerCase()
-    const filtered = Object.entries(credentials).reduce((acc, [id, credential]) => {
+    const filtered = credentials.filter(credential => {
       const hostname = new URL(credential.siteUrl).hostname.toLowerCase()
       const username = (credential.user.name || credential.user.displayName || "").toLowerCase()
       
-      if (hostname.includes(term) || username.includes(term)) {
-        acc[id] = credential
-      }
-      return acc
-    }, {} as Record<string, StoredWebAuthnCredential>)
+      return hostname.includes(term) || username.includes(term)
+    })
     
     setFilteredCredentials(filtered)
   }, [searchTerm, credentials])
@@ -66,16 +63,16 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
   const handleDeleteCredential = async (id: string) => {
     try {
       const storage = await getConfiguredStorage()
-      const storedCredentials = await storage.get<Record<string, StoredWebAuthnCredential>>("webauthn_credentials") || {}
+      const storedCredentials = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials") || []
       
       // Remove the credential
-      delete storedCredentials[id]
+      const updatedCredentials = storedCredentials.filter(cred => cred.id !== id)
       
       // Update storage
-      await storage.set("webauthn_credentials", storedCredentials)
+      await storage.set("webauthn_credentials", updatedCredentials)
       
       // Update state
-      setCredentials(storedCredentials)
+      setCredentials(updatedCredentials)
     } catch (error) {
       console.error("Error deleting credential:", error)
     }
@@ -126,15 +123,15 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
         
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading credentials...</p>
-        ) : Object.keys(filteredCredentials).length === 0 ? (
+        ) : filteredCredentials.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {searchTerm ? "No matching passkeys found." : "No passkeys stored yet."}
           </p>
         ) : (
           <ScrollArea className="h-[240px] rounded-md">
             <div className="space-y-2 pr-3">
-              {Object.entries(filteredCredentials).map(([id, credential]) => (
-                <div key={id} className="p-3 bg-muted rounded-md">
+              {filteredCredentials.map((credential) => (
+                <div key={credential.id} className="p-3 bg-muted rounded-md">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{new URL(credential.siteUrl).hostname}</p>
@@ -146,7 +143,7 @@ export function CredentialsView({ onBack }: CredentialsViewProps) {
                       size="sm"
                       className="text-red-500"
                       // className="h-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteCredential(id)}
+                      onClick={() => handleDeleteCredential(credential.id)}
                     >
                       Delete
                     </Button>
