@@ -1,4 +1,4 @@
-import "./styles.css"
+import "./install/styles.css"
 
 const InstallPage = () => {
   return (
