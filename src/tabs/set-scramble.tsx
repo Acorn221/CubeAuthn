@@ -3,15 +3,14 @@ import "./styles.css"
 import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
 import { BTCube } from "gan-i3-356-bluetooth"
 import { AlertTriangle, Lock } from "lucide-react"
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cubeSVG } from "sr-visualizer"
 
 import { useStorage } from "@plasmohq/storage/hook"
 
 import "@/components/apple-style/apple-style.css"
 
-import type { CubeHashConfig } from "@/background/types"
-import { getAllWebAuthnCredentials } from "@/background/utils"
+import type { CubeHashConfig, StoredWebAuthnCredential } from "@/background/types"
 import { createDownloadableHTML, generateHash } from "@/utils/set-scramble"
 
 const SetScramble = () => {
@@ -19,11 +18,20 @@ const SetScramble = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [isGeneratingHash, setIsGeneratingHash] = useState(false)
-  const [hashGenerated, setHashGenerated] = useState(false)
   const [htmlContent, setHtmlContent] = useState<string>("")
   const [showDoneScreen, setShowDoneScreen] = useState(false)
-  const [hasExistingCredentials, setHasExistingCredentials] = useState(false)
-  const [credentialCount, setCredentialCount] = useState(0)
+  
+  // Use the storage hook to get WebAuthn credentials
+  const [webAuthnCredentials] = useStorage<Record<string, StoredWebAuthnCredential>>(
+    "webauthn_credentials",
+  )
+  
+  // Use useMemo to calculate derived state
+  const credentialCount = useMemo(() => {
+    console.log(`WebAuthn credentials:`, webAuthnCredentials);
+    return Object.keys(webAuthnCredentials || {}).length;
+  }, [webAuthnCredentials]);
+
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   )
@@ -31,6 +39,7 @@ const SetScramble = () => {
     "macAddress",
     (x) => x || ""
   )
+  
   const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
     "fixedCubeScrambleHash"
   )
@@ -93,7 +102,6 @@ const SetScramble = () => {
     
     try {
       setIsGeneratingHash(true)
-      setHashGenerated(false)
       
       // Generate the hash
       const hash = await generateCubeHash()
@@ -127,7 +135,6 @@ const SetScramble = () => {
       setHtmlContent(html)
       
       // Set success state
-      setHashGenerated(true)
       setShowDoneScreen(true)
       
       // Optionally disconnect the cube after confirmation
@@ -197,22 +204,6 @@ const SetScramble = () => {
     }
   }, [btCube.current, macAddress])
 
-  // Check for existing credentials on mount
-  useEffect(() => {
-    const checkExistingCredentials = async () => {
-      try {
-        const credentials = await getAllWebAuthnCredentials();
-        const count = Object.keys(credentials).length;
-        setCredentialCount(count);
-        setHasExistingCredentials(count > 0);
-      } catch (error) {
-        console.error("Error checking existing credentials:", error);
-      }
-    };
-
-    checkExistingCredentials();
-  }, []);
-
   return (
     <div className="h-screen w-screen bg-black flex items-center justify-center">
       <div className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-4">
@@ -254,7 +245,7 @@ const SetScramble = () => {
               </div>
             )}
   
-            {hasExistingCredentials && (
+            {credentialCount > 0 && (
               <div className="bg-amber-900/30 border border-amber-500/50 rounded-md p-3 mb-4 flex items-start gap-2">
                 <AlertTriangle className="text-amber-500 size-4 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-amber-200">
@@ -273,9 +264,9 @@ const SetScramble = () => {
             {isConnected ? (
               <button
                 onClick={handleConfirmScramble}
-                disabled={isGeneratingHash || hasExistingCredentials}
+                disabled={isGeneratingHash || credentialCount > 0}
                 className={`w-full py-3 rounded-md ${
-                  hasExistingCredentials
+                  credentialCount > 0
                     ? "bg-[#3a3a3c] cursor-not-allowed"
                     : isGeneratingHash
                       ? "bg-[#0071e3]/50"
@@ -283,7 +274,7 @@ const SetScramble = () => {
                 } text-white font-medium text-sm`}>
                 {isGeneratingHash
                   ? "Generating Hash..."
-                  : hasExistingCredentials
+                  : credentialCount > 0
                     ? "Cannot Change Scramble"
                     : "Confirm Scramble"}
               </button>
