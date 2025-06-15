@@ -52,7 +52,8 @@
       "https://*/*"
     ],
     "permissions": [
-      "nativeMessaging"
+      "nativeMessaging",
+      "tabs"
     ],
     "key": "$PUBLIC_KEY"
   }
