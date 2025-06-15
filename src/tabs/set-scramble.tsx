@@ -6,7 +6,8 @@ import { useStorage } from "@plasmohq/storage/hook"
 import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
 import { Lock } from "lucide-react"
 
-import "../components/apple-style/apple-style.css"
+import "@/components/apple-style/apple-style.css"
+import type { CubeHashConfig } from "@/background/types"
 
 const SetScramble = () => {
   const btCube = useRef(new BTCube())
@@ -19,6 +20,9 @@ const SetScramble = () => {
     "macAddress",
     (x) => x || ""
   )
+	const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+		"fixedCubeScrambleHash"
+	);
 
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
@@ -47,23 +51,27 @@ const SetScramble = () => {
     if (!isConnected) return ""
     
     // This is just a placeholder - actual hash generation will be implemented later
-    const cubeNum = btCube.current.getCube().getStateHex()
+    const cubeNum = btCube.current.getCube().getStateHex();
+		// TODO: calculate how many iterations we can do under 50ms of sha-512
+		// TODO: Then save the hash iterations and the "cubeScrambleHash" in the storage
+		// TODO: save the `setCubeScrambleHash` with the hash and iterations
+		// TODO: let the user download HTML of the hash, iterations and SVG (and cube state num)
     return cubeNum
   }, [isConnected])
 
   // Handle confirmation of the scramble
   const handleConfirmScramble = useCallback(() => {
-    if (!isConnected) return
+    if (!isConnected) return;
     
-    const hash = generateHash()
-    console.log("Confirmed scramble with hash:", hash)
+    const hash = generateHash();
+    console.log("Confirmed scramble with hash:", hash);
     
     // Here you would typically save the hash or use it for authentication
     // This is a placeholder for now
     
     // Optionally disconnect the cube after confirmation
     // btCube.current.stop()
-  }, [isConnected, generateHash])
+  }, [isConnected, generateHash]);
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
     const colorMap: Record<string, string> = {

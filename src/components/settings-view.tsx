@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
+import type { CubeHashConfig } from "@/background/types"
 
 interface SettingsViewProps {
   onBack: () => void
@@ -31,9 +32,8 @@ export function SettingsView({ onBack }: SettingsViewProps) {
     (v: boolean | undefined) => (v === undefined ? true : v)
   )
 
-  const [fixedCubeScramble, setFixedCubeScramble] = useStorage(
-    "fixedCubeScrambleHash",
-    (v: string | undefined) => (v === undefined ? "" : v)
+  const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+    "fixedCubeScrambleHash"
   );
 
   const [storageArea, setStorageArea] = useStorage(
@@ -91,7 +91,7 @@ export function SettingsView({ onBack }: SettingsViewProps) {
               When enabled, the same cube scramble will be used for all
               passkeys. This means you'll solve the same pattern every time.
             </p>
-            {useSameCubeScramble && !fixedCubeScramble && (
+            {useSameCubeScramble && !cubeScrambleHash && (
               <div> 
                 {/* new tab needs to open */}
                 Click <a href="/tabs/set-scramble.html" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">here</a> to set a fixed cube

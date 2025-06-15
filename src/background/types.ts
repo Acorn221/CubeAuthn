@@ -99,3 +99,9 @@ export interface StoredWebAuthnCredential {
     // When this credential was created
     createdAt: number;
 }
+
+export type CubeHashConfig = {
+	iterations: number;
+	salt: string;
+	hash: string;
+} | undefined;
