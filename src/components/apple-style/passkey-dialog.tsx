@@ -31,7 +31,7 @@ const PasskeyDialog: React.FC = () => {
     (x) => x || ""
   );
 
-  const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+  const [cubeScrambleHash] = useStorage<CubeHashConfig>(
     "fixedCubeScrambleHash"
   )
   
@@ -87,15 +87,21 @@ const PasskeyDialog: React.FC = () => {
 
   const checkCubeScrambleAgainstHash = useCallback(
     async () => {
-      if (!cubeScrambleHash) return true; // No hash set, assume valid
+      if (!cubeScrambleHash) {
+        console.log("No cube scramble hash configured, skipping check.");
+        return true; // No hash set, assume valid
+      }
 
       const cube = btCube.current.getCube();
       const cubeNum = cube.getStateHex();
 
-      return checkHash(cubeNum, cubeScrambleHash);
+      const hash = await checkHash(cubeNum, cubeScrambleHash);
+
+      console.log(`Hash result:  ${hash} for cube state: ${cubeNum}`);
+      return hash;
     },
     [cubeScrambleHash, facelets]
-  )
+  );
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
     const colorMap: Record<string, string> = {
@@ -152,6 +158,7 @@ const PasskeyDialog: React.FC = () => {
       const cubeNum = btCube.current.getCube().getStateHex()
       const isScrambleValid = await checkCubeScrambleAgainstHash()
       if(!isScrambleValid) {
+        // TODO: Show an error message to the user
         throw new Error("Cube scramble does not match the expected hash.")
       }
       btCube.current.stop()
