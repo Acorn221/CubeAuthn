@@ -1,9 +1,9 @@
 import type { PlasmoMessaging } from '@plasmohq/messaging';
 import { sendToContentScript } from "@plasmohq/messaging";
+import type { PublicKeyCredentialRequestOptionsSerialized } from '../types';
 
 export type HandleAuthenticationRequest = {
-  challenge: string;
-  options: any;
+  publicKey: PublicKeyCredentialRequestOptionsSerialized;
 };
 
 export type HandleAuthenticationResponse = {
@@ -36,10 +36,12 @@ const handler: PlasmoMessaging.MessageHandler<
     // For now, we'll just pass through the original request
     // In a real implementation, you would modify the challenge or other parameters
     
-    res.send({
-      credential: req.body.options,
-      success: true
-    });
+    // res.send({
+    //   credential: req.body.options,
+    //   success: true
+    // });
+
+    throw new Error("TMP")
   } catch (error) {
     console.error("Error handling authentication:", error);
     res.send({

@@ -4,11 +4,11 @@ import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
 import { ports } from ".."
-import type { InboundMessages, WebAuthnCredential } from "../types"
+import type { InboundMessages, PublicKeyCredentialCreationOptionsSerialized, WebAuthnCredential } from "../types"
 import { b64url, createFakeCredentialIntercept } from "@/utils"
 
 export type HandleRegisterRequest = {
-  publicKey: CredentialCreationOptions["publicKey"]
+  publicKey: PublicKeyCredentialCreationOptionsSerialized
   url: string
 }
 
@@ -28,7 +28,7 @@ const handler: PlasmoMessaging.MessageHandler<
   try {
     // Open the authentication dialog
     const opened = await ports.sendToTarget(
-      "openAuthDialog",
+      "registerDialog",
       { publicKey: req.body.publicKey },
       { url: req.body.url },
       true

@@ -44,7 +44,7 @@ const PasskeyDialog: React.FC = () => {
 
   // Handler for authentication requests
   useMessageHandler(
-    "openAuthDialog",
+    "registerDialog",
     async (req) => {
       let result: boolean | undefined
       setShowAuthDialog(true)
