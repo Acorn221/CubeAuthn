@@ -91,8 +91,6 @@ const SetScramble = () => {
     return await generateHash(
       cubeNum,
       setCubeScrambleHash,
-      targetIterations,
-      setTargetIterations
     )
   }, [isConnected, setCubeScrambleHash, targetIterations, setTargetIterations])
 
