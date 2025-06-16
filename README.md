@@ -7,3 +7,5 @@
 - [ ] Setup the authentication to actually work
 - [ ] Fix state management so when we re-register the cube is correctly displayed
 - [ ] Make sure we set the secret to undefined when the user chooses to do so
+- [ ] Use an Iframe to display a tab page which handles the connection to the cube
+
