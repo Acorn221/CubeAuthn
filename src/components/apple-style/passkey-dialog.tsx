@@ -9,7 +9,8 @@ import { cubeSVG } from "sr-visualizer"
 import { useStorage } from "@plasmohq/storage/hook"
 import RubiksCubeIcon from "./rubiks-cube-icon"
 import "./apple-style.css"
-import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
+import type { CubeHashConfig, PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
+import { checkHash, generateHash } from "../../utils"
 
 const PasskeyDialog: React.FC = () => {
   const btCube = useRef(new BTCube())
@@ -19,7 +20,7 @@ const PasskeyDialog: React.FC = () => {
   const [publicRegisterKey, setRegisterPublicKey] = useState<
     CredentialCreationOptions["publicKey"] | undefined
   >();
-  const [publicAuthKey, setPublicKey] = useState<
+  const [publicAuthKey, setAuthPublicKey] = useState<
     PublicKeyCredentialRequestOptionsSerialized | undefined
   >();
   const [facelets, setFacelets] = useState(
@@ -28,7 +29,12 @@ const PasskeyDialog: React.FC = () => {
   const [macAddress, setMacAddress] = useStorage<string>(
     "macAddress",
     (x) => x || ""
+  );
+
+  const [cubeScrambleHash, setCubeScrambleHash] = useStorage<CubeHashConfig>(
+    "fixedCubeScrambleHash"
   )
+  
 
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
@@ -41,7 +47,8 @@ const PasskeyDialog: React.FC = () => {
     setShowAuthDialog(false)
     setConnectionFailed(false)
     setIsConnected(false)
-    setPublicKey(undefined)
+    setAuthPublicKey(undefined)
+    setRegisterPublicKey(undefined)
   }, [])
 
   // Handler for authentication requests
@@ -50,8 +57,7 @@ const PasskeyDialog: React.FC = () => {
     async (req) => {
       let result: boolean | undefined
       setShowAuthDialog(true)
-      setConnectionFailed(false)
-      setPublicKey(req.publicKey)
+      setRegisterPublicKey(req.publicKey)
       try {
         await btCube.current.init(macAddress)
         result = btCube.current.isConnected()
@@ -72,9 +78,23 @@ const PasskeyDialog: React.FC = () => {
     "authDialog",
     async (req) => {
       // TODO: HANDLE AUTHENTICATION
-      setPublicKey(req.publicKey)
+      // TODO: CHECK THE CUBE SCRAMBLE HASH IF PRESENT
+      setAuthPublicKey(req.publicKey)
+      setShowAuthDialog(true)
 
     }
+  )
+
+  const checkCubeScrambleAgainstHash = useCallback(
+    async () => {
+      if (!cubeScrambleHash) return true; // No hash set, assume valid
+
+      const cube = btCube.current.getCube();
+      const cubeNum = cube.getStateHex();
+
+      return checkHash(cubeNum, cubeScrambleHash);
+    },
+    [cubeScrambleHash, facelets]
   )
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
@@ -130,6 +150,10 @@ const PasskeyDialog: React.FC = () => {
   const handleAuthConfirm = async () => {
     try {
       const cubeNum = btCube.current.getCube().getStateHex()
+      const isScrambleValid = await checkCubeScrambleAgainstHash()
+      if(!isScrambleValid) {
+        throw new Error("Cube scramble does not match the expected hash.")
+      }
       btCube.current.stop()
 
       const res = await sendRegister({
@@ -140,11 +164,10 @@ const PasskeyDialog: React.FC = () => {
 
       if (res.success) {
         // Success animation could be added here
+        handleCloseDialog()
       }
     } catch (error) {
       console.error("Authentication error:", error)
-    } finally {
-      handleCloseDialog()
     }
   }
 
