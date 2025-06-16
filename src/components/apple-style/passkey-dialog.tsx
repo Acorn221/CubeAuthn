@@ -6,21 +6,22 @@ import { BTCube } from "gan-i3-356-bluetooth"
 import { UserLock } from "lucide-react"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { cubeSVG } from "sr-visualizer"
-
 import { useStorage } from "@plasmohq/storage/hook"
-
 import RubiksCubeIcon from "./rubiks-cube-icon"
-
 import "./apple-style.css"
+import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
 
 const PasskeyDialog: React.FC = () => {
   const btCube = useRef(new BTCube())
   const [isConnected, setIsConnected] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [connectionFailed, setConnectionFailed] = useState(false)
-  const [publicKey, setPublicKey] = useState<
+  const [publicRegisterKey, setRegisterPublicKey] = useState<
     CredentialCreationOptions["publicKey"] | undefined
-  >()
+  >();
+  const [publicAuthKey, setPublicKey] = useState<
+    PublicKeyCredentialRequestOptionsSerialized | undefined
+  >();
   const [facelets, setFacelets] = useState(
     "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
   )
@@ -32,7 +33,8 @@ const PasskeyDialog: React.FC = () => {
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
 
-  const sendResult = useSendMessage("register")
+  const sendRegister = useSendMessage("register");
+  const sendAuth = useSendMessage("auth");
 
   // Handle closing the dialog and resetting state
   const handleCloseDialog = useCallback(() => {
@@ -64,6 +66,15 @@ const PasskeyDialog: React.FC = () => {
       return { result }
     },
     [macAddress, setFacelets, setIsConnected]
+  );
+
+  useMessageHandler(
+    "authDialog",
+    async (req) => {
+      // TODO: HANDLE AUTHENTICATION
+      setPublicKey(req.publicKey)
+
+    }
   )
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
@@ -121,7 +132,7 @@ const PasskeyDialog: React.FC = () => {
       const cubeNum = btCube.current.getCube().getStateHex()
       btCube.current.stop()
 
-      const res = await sendResult({
+      const res = await sendRegister({
         cubeNum,
         // getting the origin from the isolated cs for security
         origin: window.location.origin,
@@ -172,12 +183,18 @@ const PasskeyDialog: React.FC = () => {
                 Use CubeAuthn to sign in?
               </h2>
 
-              {publicKey && (
+              {publicRegisterKey && (
                 <p className="apple-dialog-description text-center text-xs mb-2">
-                  A passkey will be created for "{publicKey.user.displayName}" on this extension and synced with
+                  A passkey will be created for "{publicRegisterKey.user.displayName}" on this extension and synced with
                   your google account.
                 </p>
               )}
+              {
+                publicAuthKey && (
+                  <></>
+                  //  TODO SHOW THE POTENTIAL LOGINS FROM THE STORAGE AND AVAILABLE LOGIN METHODS FROM publicAuthKey.allowCredentials
+                )
+              }
 
               {isConnected && (
                 <div className="w-full flex cube-container mb-2">
