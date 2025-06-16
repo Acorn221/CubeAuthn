@@ -84,7 +84,6 @@ export const createFakeCredentialIntercept = async ({
   return {
     credential: {
       type: "public-key",
-      rawId: Array.from(credIdBytes),
       id: credId,
       response: {
         clientDataJSON: Array.from(clientDataJSON),

@@ -112,7 +112,7 @@ export type CubeHashConfig = {
  */
 export interface WebAuthnCredential {
   type: string
-  rawId: number[]
+  rawId?: number[]
   id: string
   response: {
     clientDataJSON: number[]
