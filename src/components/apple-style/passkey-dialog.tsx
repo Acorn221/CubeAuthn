@@ -17,6 +17,7 @@ const PasskeyDialog: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [connectionFailed, setConnectionFailed] = useState(false)
+  const [isScrambleValid, setIsScrambleValid] = useState(false)
   const [publicRegisterKey, setRegisterPublicKey] = useState<
     CredentialCreationOptions["publicKey"] | undefined
   >();
@@ -100,8 +101,15 @@ const PasskeyDialog: React.FC = () => {
       console.log(`Hash result:  ${hash} for cube state: ${cubeNum}`);
       return hash;
     },
-    [cubeScrambleHash, facelets]
+    [cubeScrambleHash, facelets, isConnected]
   );
+
+  useEffect(() => {
+    checkCubeScrambleAgainstHash().then((isValid) => {
+      setIsScrambleValid(isValid);
+    });
+  }, [checkCubeScrambleAgainstHash, facelets, cubeScrambleHash, setIsScrambleValid, isConnected]);
+
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
     const colorMap: Record<string, string> = {
@@ -239,10 +247,26 @@ const PasskeyDialog: React.FC = () => {
                 </div>
               )}
 
+              {
+                !isScrambleValid && isConnected && (
+                  <div className="text-center my-4 text-xs text-muted-foreground">
+                    Invalid scramble ❌
+                  </div>
+                )
+              }
+          {
+                isScrambleValid && isConnected && (
+                  <div className="text-center my-4 text-xs text-muted-foreground">
+                    Valid scramble ✅
+                  </div>
+                )
+              }
+
               {isConnected ? (
                 <button
                   onClick={handleAuthConfirm}
-                  className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
+                  disabled={!isScrambleValid}
+                  className={`w-full py-3 rounded-md ${isScrambleValid ? 'bg-[#0071e3]' : 'bg-[#0071e3]/50 hover:bg-[#0071e3]/50' } text-white font-medium text-sm`}>
                   Confirm Scramble
                 </button>
               ) : connectionFailed ? (
