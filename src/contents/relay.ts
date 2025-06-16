@@ -15,16 +15,3 @@ relayMessage({
 relayMessage({
   name: 'handleAuthentication',
 });
-
-// Relay messages for cube connection
-relayMessage({
-  name: 'getCubeState',
-});
-
-relayMessage({
-  name: 'connectCube',
-});
-
-relayMessage({
-  name: 'disconnectCube',
-});

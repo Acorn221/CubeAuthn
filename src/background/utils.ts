@@ -1,16 +1,5 @@
 import { Storage } from "@plasmohq/storage";
-import type { StoredWebAuthnCredential } from "./types";
-
-// Import the WebAuthnCredential interface from handleRegister
-interface WebAuthnCredential {
-  type: string;
-  rawId: number[];
-  id: string;
-  response: {
-    clientDataJSON: number[];
-    attestationObject: number[];
-  };
-}
+import type { StoredWebAuthnCredential, WebAuthnCredential } from "./types";
 
 /**
  * Gets the configured storage area from settings
