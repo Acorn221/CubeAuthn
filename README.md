@@ -9,3 +9,4 @@
 - [ ] Make sure we set the secret to undefined when the user chooses to do so
 - [ ] Use an Iframe to display a tab page which handles the connection to the cube
 - [ ] Have an option to use a virtual cube (for testing)
+- [ ] Add a timeout timer so we don't overrun it
