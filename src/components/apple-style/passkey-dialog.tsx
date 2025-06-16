@@ -32,7 +32,7 @@ const PasskeyDialog: React.FC = () => {
   const frontCubeRef = useRef<HTMLDivElement>()
   const backCubeRef = useRef<HTMLDivElement>()
 
-  const sendResult = useSendMessage("auth")
+  const sendResult = useSendMessage("register")
 
   // Handle closing the dialog and resetting state
   const handleCloseDialog = useCallback(() => {

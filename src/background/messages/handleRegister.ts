@@ -41,9 +41,9 @@ const handler: PlasmoMessaging.MessageHandler<
     // Wait for the user to set the cube and for the UI to send the cube number
     let unsubscribe: (() => void) | undefined
     const { cubeNum, origin } = await new Promise<
-      InboundMessages["auth"]["request"]
+      InboundMessages["register"]["request"]
     >((resolve) => {
-      unsubscribe = ports.registerHandler("auth", async (data) => {
+      unsubscribe = ports.registerHandler("register", async (data) => {
         resolve(data)
         return { success: true }
       })

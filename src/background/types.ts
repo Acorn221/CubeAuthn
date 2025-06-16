@@ -1,8 +1,12 @@
 import type { MessageDefinitions } from "./port-messaging-api"
 
 export interface InboundMessages {
-  auth: {
+  register: {
     request: { cubeNum: string; origin: string }
+    response: { success: boolean }
+  }
+  auth: {
+    request: { cubeNum: string; origin: string, keyId: string }
     response: { success: boolean }
   }
   getData: {

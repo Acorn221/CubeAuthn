@@ -1,12 +1,15 @@
 import type {
+  HandleAuthenticationRequest,
+  HandleAuthenticationResponse
+} from "@/background/messages/handleAuthentication"
+import type {
   HandleRegisterRequest,
   HandleRegisterResponse
 } from "@/background/messages/handleRegister"
+import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
 import type { PlasmoCSConfig } from "plasmo"
 
 import { sendToBackgroundViaRelay } from "@plasmohq/messaging"
-import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
-import type { HandleAuthenticationRequest, HandleAuthenticationResponse } from "@/background/messages/handleAuthentication"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://webauthn.io/*"],
@@ -158,8 +161,8 @@ navigator.credentials.get = async function (
                 ? options.publicKey.challenge
                 : options.publicKey.challenge.buffer
             )
-          ),
-        } satisfies PublicKeyCredentialRequestOptionsSerialized;
+          )
+        } satisfies PublicKeyCredentialRequestOptionsSerialized
 
         const res = await sendToBackgroundViaRelay<
           HandleAuthenticationRequest,
@@ -168,6 +171,7 @@ navigator.credentials.get = async function (
           name: "handleAuthentication",
           body: {
             publicKey: publicKeyForSerialization,
+            url: window.location.href
           }
         })
 

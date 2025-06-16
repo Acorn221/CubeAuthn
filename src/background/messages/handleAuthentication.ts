@@ -1,41 +1,59 @@
-import type { PlasmoMessaging } from '@plasmohq/messaging';
-import { sendToContentScript } from "@plasmohq/messaging";
-import type { PublicKeyCredentialRequestOptionsSerialized } from '../types';
+import type { PlasmoMessaging } from "@plasmohq/messaging"
+import { sendToContentScript } from "@plasmohq/messaging"
+
+import { ports } from ".."
+import type {
+  InboundMessages,
+  PublicKeyCredentialRequestOptionsSerialized
+} from "../types"
 
 export type HandleAuthenticationRequest = {
-  publicKey: PublicKeyCredentialRequestOptionsSerialized;
-};
+  publicKey: PublicKeyCredentialRequestOptionsSerialized
+  url: string
+}
 
 export type HandleAuthenticationResponse = {
-  credential: any;
-  success: boolean;
-  error?: string;
-};
+  credential: any
+  success: boolean
+  error?: string
+}
 
 const handler: PlasmoMessaging.MessageHandler<
   HandleAuthenticationRequest,
   HandleAuthenticationResponse
 > = async (req, res) => {
   try {
-    // Get the current cube state
-    const cubeStateResponse = await sendToContentScript({
-      name: "getCubeState"
-    });
-    
-    if (!cubeStateResponse.connected) {
-      throw new Error("Cube is not connected");
+    // Open the authentication dialog
+    const opened = await ports.sendToTarget(
+      "authDialog",
+      { publicKey: req.body.publicKey },
+      { url: req.body.url },
+      true
+    )
+
+    if (!opened) {
+      throw new Error("Failed to connect to the isolated content script")
     }
+
+    // Wait for the user to set the cube and for the UI to send the cube number
+    let unsubscribe: (() => void) | undefined
+    const { cubeNum, origin, keyId } = await new Promise<
+      InboundMessages["auth"]["request"]
+    >((resolve) => {
+      unsubscribe = ports.registerHandler("auth", async (data) => {
+        resolve(data)
+        return { success: true }
+      })
+    })
+
+    // Unsubscribe from the handler
+    unsubscribe?.()
+
+    console.log("⏳ Creating WebAuthn credential with cube state:", cubeNum)
+
+
     
-    const cubeState = cubeStateResponse.state;
-    console.log("Using cube state for authentication:", cubeState);
-    
-    // Modify the authentication challenge based on the cube state
-    // This is where you would implement your custom logic to incorporate
-    // the cube state into the WebAuthn authentication process
-    
-    // For now, we'll just pass through the original request
-    // In a real implementation, you would modify the challenge or other parameters
-    
+
     // res.send({
     //   credential: req.body.options,
     //   success: true
@@ -43,13 +61,13 @@ const handler: PlasmoMessaging.MessageHandler<
 
     throw new Error("TMP")
   } catch (error) {
-    console.error("Error handling authentication:", error);
+    console.error("Error handling authentication:", error)
     res.send({
       credential: null,
       success: false,
       error: String(error)
-    });
+    })
   }
-};
+}
 
-export default handler;
+export default handler
