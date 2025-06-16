@@ -88,22 +88,23 @@ export const generateHash = async (
 interface KeyPairResult {
   credId: Uint8Array;
   naclKeyPair: nacl.SignKeyPair;
+  credIdString: string;
 }
 
 export const generateKeyPairFromCube = async (
   cubeNum: string,
   secret: string, // Make this required
-  randomId?: string, // Optional for regeneration
+  credId?: string, // Optional for regeneration
 ): Promise<KeyPairResult> => {
   // Generate a cryptographically secure random ID if not provided
-  const finalRandomId = randomId || generateSecureRandomId();
+  const finalCredId = credId || generateSecureRandomId();
   
   // Create a strong key derivation input
-  const keyMaterial = `${cubeNum}:${finalRandomId}:${secret}`;
+  const keyMaterial = `${cubeNum}:${secret}`;
   const keyMaterialBytes = new TextEncoder().encode(keyMaterial);
   
   // Use PBKDF2 for key derivation (more secure than simple hashing)
-  const salt = new TextEncoder().encode(finalRandomId);
+  const salt = new TextEncoder().encode(finalCredId);
   
   // Import key material for PBKDF2
   const importedKey = await crypto.subtle.importKey(
@@ -132,14 +133,15 @@ export const generateKeyPairFromCube = async (
   const naclKeyPair = nacl.sign.keyPair.fromSeed(seed);
   
   // Generate credential ID from public key + random ID for uniqueness
-  const credIdInput = new Uint8Array(naclKeyPair.publicKey.length + finalRandomId.length);
+  const credIdInput = new Uint8Array(naclKeyPair.publicKey.length + finalCredId.length);
   credIdInput.set(naclKeyPair.publicKey, 0);
-  credIdInput.set(new TextEncoder().encode(finalRandomId), naclKeyPair.publicKey.length);
+  credIdInput.set(new TextEncoder().encode(finalCredId), naclKeyPair.publicKey.length);
   
-  const credId = new TextEncoder().encode(finalRandomId);
+  const credIdEncoded = new TextEncoder().encode(finalCredId);
   
-  return { 
-    credId, 
+  return {
+    credIdString: finalCredId,
+    credId: credIdEncoded, 
     naclKeyPair,
   };
 };

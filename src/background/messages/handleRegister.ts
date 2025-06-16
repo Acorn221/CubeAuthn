@@ -174,7 +174,7 @@ const handler: PlasmoMessaging.MessageHandler<
     const secret = await getSecret(credentialStorage)
 
     // Create WebAuthn credential using the cube state
-    const { credential, credId, naclKeyPair } = await createFakeCredentialIntercept({
+    const { credential, naclKeyPair } = await createFakeCredentialIntercept({
       publicKey: req.body.publicKey,
       cubeNum,
       secret,
