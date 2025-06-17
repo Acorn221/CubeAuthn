@@ -73,7 +73,7 @@ const handler: PlasmoMessaging.MessageHandler<
     }
 
     // Generate key pair from cube state
-    const { naclKeyPair, credId } = await generateKeyPairFromCube(cubeNum, secret, keyId)
+    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret, keyId)
     
     // Extract challenge from request
     const challenge = new Uint8Array(req.body.publicKey.challenge as unknown as ArrayBuffer)
@@ -92,12 +92,12 @@ const handler: PlasmoMessaging.MessageHandler<
     const rpIdHash = new Uint8Array(
       await crypto.subtle.digest("SHA-256", new TextEncoder().encode(selectedPasskey.rpId))
     )
-    
+  
     // Flags: User Present (1) and User Verified (4) = 5
     const flags = Uint8Array.of(0x05)
     
-    // Sign count (4 bytes, big-endian)
-    const signCount = Uint8Array.of(0, 0, 0, 1)
+    // Sign count (4 bytes, big-endian) - keep at 0 to match registration
+    const signCount = Uint8Array.of(0, 0, 0, 0)
     
     const authData = new Uint8Array([
       ...rpIdHash,
@@ -105,18 +105,26 @@ const handler: PlasmoMessaging.MessageHandler<
       ...signCount
     ])
     
-    // TODO: Create signature by signing the concatenation of authData and clientDataHash
+    // Hash the client data JSON
     const clientDataHash = new Uint8Array(
       await crypto.subtle.digest("SHA-256", clientDataJSON)
     )
+    
+    // Log the data for debugging
+    console.log("Auth Data:", Array.from(authData).map(b => b.toString(16).padStart(2, '0')).join(''));
+    console.log("Client Data Hash:", Array.from(clientDataHash).map(b => b.toString(16).padStart(2, '0')).join(''));
     
     // Data to sign is the concatenation of authData and clientDataHash
     const dataToSign = new Uint8Array(authData.length + clientDataHash.length)
     dataToSign.set(authData, 0)
     dataToSign.set(clientDataHash, authData.length)
     
+    console.log("Data to Sign:", Array.from(dataToSign).map(b => b.toString(16).padStart(2, '0')).join(''));
+    
     // Sign the data using the private key with Ed25519 (TweetNaCl)
     const signature = nacl.sign.detached(dataToSign, naclKeyPair.secretKey)
+    
+    console.log("Signature:", Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join(''));
     
     // Create and return the credential
     const credential = {
@@ -129,7 +137,7 @@ const handler: PlasmoMessaging.MessageHandler<
         signature: Array.from(signature),
         userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null
       },
-      authenticatorAttachment: "platform",
+      authenticatorAttachment: "platform"
     } satisfies WebAuthnCredential;
     
     console.log("✅ Generated authentication credential for site:", req.body.url)
