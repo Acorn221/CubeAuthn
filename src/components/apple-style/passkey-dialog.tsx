@@ -17,7 +17,7 @@ const PasskeyDialog: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [connectionFailed, setConnectionFailed] = useState(false)
-  const [isScrambleValid, setIsScrambleValid] = useState(false)
+   const [isScrambleValid, setIsScrambleValid] = useState(false)
   const [publicRegisterKey, setRegisterPublicKey] = useState<
     CredentialCreationOptions["publicKey"] | undefined
   >();
@@ -94,6 +94,7 @@ const PasskeyDialog: React.FC = () => {
       }
 
       const cube = btCube.current.getCube();
+      if(!cube) return undefined;
       const cubeNum = cube.getStateHex();
 
       const hash = await checkHash(cubeNum, cubeScrambleHash);
@@ -113,12 +114,12 @@ const PasskeyDialog: React.FC = () => {
 
   const convertCubeFormat = useCallback((cubeString: string): string => {
     const colorMap: Record<string, string> = {
-      U: "w", // Up face = white
-      R: "r", // Right face = red
-      F: "b", // Front face = blue
-      D: "y", // Down face = yellow
-      L: "o", // Left face = orange
-      B: "g" // Back face = green
+      U: "w",
+      R: "r",
+      F: "g",
+      D: "y",
+      L: "o",
+      B: "b" 
     }
 
     return cubeString
@@ -267,7 +268,7 @@ const PasskeyDialog: React.FC = () => {
                   onClick={handleAuthConfirm}
                   disabled={!isScrambleValid}
                   className={`w-full py-3 rounded-md ${isScrambleValid ? 'bg-[#0071e3]' : 'bg-[#0071e3]/50 hover:bg-[#0071e3]/50' } text-white font-medium text-sm`}>
-                  Confirm Scramble
+                  {cubeScrambleHash ? "Confirm" : "Confirm Scramble"}
                 </button>
               ) : connectionFailed ? (
                 <button
