@@ -88,10 +88,10 @@ const SetScramble = () => {
     if (!isConnected) return ""
 
     const cubeNum = btCube.current.getCube().getStateHex()
-    return await generateHash(
+    const hash = await generateHash(
       cubeNum,
-      setCubeScrambleHash,
-    )
+    );
+    setCubeScrambleHash(hash);
   }, [isConnected, setCubeScrambleHash, targetIterations, setTargetIterations])
 
   // Handle download of the HTML file

@@ -1,14 +1,14 @@
-import { getSecret, saveWebAuthnCredential } from "@/background/utils"
+import { getSecret, getSecretStorage, saveWebAuthnCredential } from "@/background/utils"
 
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
 import { ports } from ".."
-import type { InboundMessages, WebAuthnCredential } from "../types"
+import type { InboundMessages, PublicKeyCredentialCreationOptionsSerialized, WebAuthnCredential } from "../types"
 import { b64url, createFakeCredentialIntercept } from "@/utils"
 
 export type HandleRegisterRequest = {
-  publicKey: CredentialCreationOptions["publicKey"]
+  publicKey: PublicKeyCredentialCreationOptionsSerialized
   url: string
 }
 
@@ -28,7 +28,7 @@ const handler: PlasmoMessaging.MessageHandler<
   try {
     // Open the authentication dialog
     const opened = await ports.sendToTarget(
-      "openAuthDialog",
+      "registerDialog",
       { publicKey: req.body.publicKey },
       { url: req.body.url },
       true
@@ -41,9 +41,9 @@ const handler: PlasmoMessaging.MessageHandler<
     // Wait for the user to set the cube and for the UI to send the cube number
     let unsubscribe: (() => void) | undefined
     const { cubeNum, origin } = await new Promise<
-      InboundMessages["auth"]["request"]
+      InboundMessages["register"]["request"]
     >((resolve) => {
-      unsubscribe = ports.registerHandler("auth", async (data) => {
+      unsubscribe = ports.registerHandler("register", async (data) => {
         resolve(data)
         return { success: true }
       })
@@ -56,15 +56,13 @@ const handler: PlasmoMessaging.MessageHandler<
 
     // Get settings
     const storage = new Storage({ area: "sync" }) // Settings are stored in sync storage
-    const storageArea =
-      (await storage.get<"local" | "sync">("storageArea")) || "sync"
     const useSameCubeScramble =
       (await storage.get<boolean>("useSameCubeScramble")) || false
     const useStoredSecretEntropy =
       (await storage.get<boolean>("useStoredSecretEntropy")) || true
 
     // Use the appropriate storage area based on settings
-    const credentialStorage = new Storage({ area: storageArea })
+    const credentialStorage = await getSecretStorage();
 
     // Use fixed cube scramble if enabled and available
 
@@ -77,7 +75,7 @@ const handler: PlasmoMessaging.MessageHandler<
       useStoredSecretEntropy ? "yes" : "no"
     )
 
-    const secret = await getSecret(credentialStorage)
+    const secret = await getSecret();
 
     // Create WebAuthn credential using the cube state
     const { credential, naclKeyPair } = await createFakeCredentialIntercept({
@@ -88,6 +86,8 @@ const handler: PlasmoMessaging.MessageHandler<
     })
 
     console.log("✅ Generated credential with cube state:", cubeNum)
+    console.log("✅ Generated credential", credential)
+    console.log("✅ Generated NaCl key pair", naclKeyPair)
 
     // Save the site URL and the public key to the storage
     // Extract user information from the publicKey options

@@ -18,6 +18,17 @@ export const arrayToHex = (array: Uint8Array): string => {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
+export const hexToArray = (hex: string): Uint8Array => {
+  if (hex.length % 2 !== 0) {
+    throw new Error("Hex string must have an even length");
+  }
+  const array = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    array[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  }
+  return array;
+};
+
 /**
  * Hash the cube state with PBKDF2
  */
@@ -59,8 +70,7 @@ export const hashWithPBKDF2 = async (
  */
 export const generateHash = async (
   cubeNum: string,
-  setCubeScrambleHash: (config: CubeHashConfig) => void,
-): Promise<string> => {
+): Promise<CubeHashConfig> => {
   try {
     // Use stored iterations if available and valid, otherwise calculate
     // Generate a random salt
@@ -69,20 +79,28 @@ export const generateHash = async (
     
     // Hash the cube state with PBKDF2
     const hash = await hashWithPBKDF2(cubeNum, saltBytes);
-    
-    // Save the hash configuration
-    setCubeScrambleHash({
+
+    return {
       iterations: ITERATIONS,
       salt,
       hash
-    });
-
-    return hash;
+    };
   } catch (error) {
     console.error("Error generating hash:", error);
-    return "";
+    throw error;
   }
 };
+
+export const checkHash = async (
+  cubeNum: string,
+  config: CubeHashConfig,
+) => {
+  // decode salt from hex to Uint8Array
+  const saltBytes = hexToArray(config.salt);
+  const hash = await hashWithPBKDF2(cubeNum, saltBytes);
+
+  return hash === config.hash;
+}
 
 
 interface KeyPairResult {

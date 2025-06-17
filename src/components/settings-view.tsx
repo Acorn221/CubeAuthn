@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle
@@ -13,9 +12,7 @@ import { Toggle } from "@/components/ui/toggle"
 import { MacAddressForm } from "@/components/mac-address-form"
 import { AlertTriangle } from "lucide-react"
 import * as React from "react"
-import { useCallback, useEffect, useState } from "react"
-
-import { Storage } from "@plasmohq/storage"
+import { useEffect, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 
 interface SettingsViewProps {
