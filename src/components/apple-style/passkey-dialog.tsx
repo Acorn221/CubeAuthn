@@ -68,6 +68,9 @@ const PasskeyDialog: React.FC = () => {
     setIsConnected(false)
     setAuthPublicKey(undefined)
     setRegisterPublicKey(undefined)
+    setFacelets("UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB")
+    setValidCubeNum(null)
+    setIsScrambleValid(false)
   }, [])
 
   // Handler for authentication requests
@@ -94,11 +97,9 @@ const PasskeyDialog: React.FC = () => {
   )
 
   useMessageHandler("authDialog", async (req) => {
-    // TODO: HANDLE AUTHENTICATION
-    // TODO: CHECK THE CUBE SCRAMBLE HASH IF PRESENT
     setAuthPublicKey(req.publicKey)
     setShowAuthDialog(true)
-    setConnectionFailed(true)
+    setConnectionFailed(true) // Setting connection failed to show the connect btn if the passkey was auto opened
   })
 
   const checkCubeScrambleAgainstHash = useCallback(async () => {
@@ -182,7 +183,7 @@ const PasskeyDialog: React.FC = () => {
   }, [btCube.current, macAddress])
 
   // Handle authentication confirmation
-  const handleAuthConfirm = async () => {
+  const handleRegisterConfirm = async () => {
     try {
       const cubeNum = btCube.current.getCube().getStateHex()
       const isScrambleValid = await checkCubeScrambleAgainstHash()
@@ -205,6 +206,25 @@ const PasskeyDialog: React.FC = () => {
       console.error("Authentication error:", error)
     }
   }
+
+  const handleAuthConfirm = useCallback(
+    async (keyId: string) => {
+      try {
+        const res = await sendAuth({
+          keyId,
+          origin: window.location.origin,
+          cubeNum: validCubeNum
+        })
+
+        if (res.success) {
+          handleCloseDialog()
+        }
+      } catch (error) {
+        console.error("Authentication error:", error)
+      }
+    },
+    [validCubeNum, publicAuthKey, sendAuth, handleCloseDialog]
+  )
 
   return (
     <>
@@ -280,19 +300,25 @@ const PasskeyDialog: React.FC = () => {
 
               {publicAuthKey && validCubeNum && (
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="w-full text-md apple-dialog-description">Login With:</div>
+                  <div className="w-full text-md apple-dialog-description">
+                    Login With:
+                  </div>
 
-                <div className="flex flex-col gap-2 w-full">
-                  {relevantCredentials.map((cred) => (
-                    <button className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">{cred.user.displayName}</button>
-                  ))}
-                </div>
+                  <div className="flex flex-col gap-2 w-full">
+                    {relevantCredentials.map((cred) => (
+                      <button
+                        onClick={() => handleAuthConfirm(cred.id)}
+                        className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
+                        {cred.user.displayName}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {isConnected && publicRegisterKey && (
                 <button
-                  onClick={handleAuthConfirm}
+                  onClick={handleRegisterConfirm}
                   disabled={!isScrambleValid}
                   className={`w-full py-3 rounded-md ${isScrambleValid ? "bg-[#0071e3]" : "bg-[#0071e3]/50 hover:bg-[#0071e3]/50"} text-white font-medium text-sm`}>
                   {cubeScrambleHash ? "Confirm" : "Confirm Scramble"}
