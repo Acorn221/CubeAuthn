@@ -37,7 +37,14 @@ export const createFakeCredentialIntercept = async ({
 	const rpId = publicKey.rp.id
 
 	// Generate key pair from cube state
-	const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret)
+	const { credId, naclKeyPair, credIdString } = await generateKeyPairFromCube(cubeNum, secret);
+
+	// const { credIdString: credId2, naclKeyPair: keyPair2 } = await generateKeyPairFromCube(cubeNum, secret, credIdString);
+
+	// console.log(`Keypair 1 ${credIdString} keypair 2: ${credId2}`);
+	// console.log("1", naclKeyPair);
+	// console.log("2", keyPair2);
+
 
 	// Create a custom COSE key from the nacl public key
 	// TweetNaCl uses Ed25519, so we should use that curve identifier

@@ -73,14 +73,9 @@ const handler: PlasmoMessaging.MessageHandler<
     }
     console.log("Selected passkey:", selectedPasskey);
 
-    // Generate key pair from cube state
-    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret, selectedPasskey.id);
+    const credIdDecoded = new TextDecoder().decode(b64url.decode(selectedPasskey.id));
 
-    const generatedPublicKeyString = Array.from(naclKeyPair.publicKey).map(byte => String.fromCharCode(byte)).join('');
-
-    if(generatedPublicKeyString !== selectedPasskey.publicKey) {
-      throw new Error("Generated public key differs from the saved public key!")
-    }
+    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret, credIdDecoded);
 
     console.log("Generated NaCl key pair for auth:", naclKeyPair);
     
