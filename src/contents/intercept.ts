@@ -22,18 +22,42 @@ function createWebAuthnCredential(credentialData: any): any {
   // Convert arrays back to ArrayBuffers
   const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
 
+  // Create the response object based on what fields are present
+  const response: any = {
+    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer
+  }
+
+  // Handle attestation response (for registration)
+  if (credentialData.response.attestationObject) {
+    response.attestationObject = new Uint8Array(
+      credentialData.response.attestationObject
+    ).buffer
+  }
+
+  // Handle assertion response (for authentication)
+  if (credentialData.response.authenticatorData) {
+    response.authenticatorData = new Uint8Array(
+      credentialData.response.authenticatorData
+    ).buffer
+  }
+
+  if (credentialData.response.signature) {
+    response.signature = new Uint8Array(
+      credentialData.response.signature
+    ).buffer
+  }
+
+  if (credentialData.response.userHandle !== undefined) {
+    response.userHandle = credentialData.response.userHandle ?
+      new Uint8Array(credentialData.response.userHandle).buffer : null
+  }
+
   // Create the credential object that matches the actual PublicKeyCredential interface
   const credential = {
     id: credentialData.id, // This should already be base64url encoded
     type: "public-key",
     rawId: rawIdBuffer,
-    response: {
-      clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON)
-        .buffer,
-      attestationObject: new Uint8Array(
-        credentialData.response.attestationObject
-      ).buffer
-    },
+    response,
 
     getClientExtensionResults() {
       return {}

@@ -133,7 +133,7 @@ const handler: PlasmoMessaging.MessageHandler<
     } satisfies WebAuthnCredential;
     
     console.log("✅ Generated authentication credential for site:", req.body.url)
-    
+    console.log("AUTH CRED", credential);
     res.send({
       credential,
       success: true
