@@ -6,7 +6,7 @@ import type { PlasmoCSConfig } from "plasmo";
 import { PasskeyDialog } from "@/components/apple-style";
 
 export const config: PlasmoCSConfig = {
-  matches: ["*"],
+  matches: ["<all_urls>"],
   run_at: "document_start",
 }
 const styleElement = document.createElement("style")

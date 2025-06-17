@@ -12,7 +12,7 @@ import type { PlasmoCSConfig } from "plasmo"
 import { sendToBackgroundViaRelay } from "@plasmohq/messaging"
 
 export const config: PlasmoCSConfig = {
-  matches: ["*"],
+  matches: ["<all_urls>"],
   run_at: "document_start",
   world: "MAIN"
 }
