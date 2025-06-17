@@ -47,6 +47,7 @@ const PasskeyDialog: React.FC = () => {
   )
 
   const relevantCredentials = useMemo(() => {
+    // TODO: CHECK THE ACCEPTED CREDS
     if (!webAuthnCredentials) return []
     return webAuthnCredentials.filter(
       (cred) => cred.origin === window.location.origin
