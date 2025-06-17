@@ -2,7 +2,7 @@ import { relayMessage } from "@plasmohq/messaging";
 import type { PlasmoCSConfig } from "plasmo";
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://webauthn.io/*"],
+  matches: ["*"],
   run_at: 'document_start',
   all_frames: true,
 };
