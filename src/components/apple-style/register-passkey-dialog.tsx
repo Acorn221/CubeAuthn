@@ -84,7 +84,7 @@ const RegisterPasskeyDialog: React.FC<RegisterPasskeyDialogProps> = ({
         <button
           onClick={handleRegisterConfirm}
           disabled={!validCubeNum}
-          className={`w-full py-3 rounded-md ${validCubeNum ? "bg-[#0071e3]" : "bg-[#0071e3]/50 cursor-not-allowed"} text-white font-medium text-sm`}>
+          className={`w-full py-3 rounded-md mt-2 ${validCubeNum ? "bg-[#4285f4]" : "bg-[#4285f4]/50 cursor-not-allowed"} text-white font-medium text-sm`}>
           {cubeScrambleHash ? "Confirm" : "Confirm Scramble"}
         </button>
       )}
