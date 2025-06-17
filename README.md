@@ -1,10 +1,17 @@
 # CubeAuthn
 
+<img src="https://github.com/Acorn221/CubeAuthn/blob/main/assets/icon.png?raw=true" width="25%">
+
 Ever wanted rubiks cube based passkeys? No?! Well here it is anyway!
 (Only currently works with GAN 356 i3)
-This is a POC and cannot be super secure due to limitations of the Cube's bluetooth protocol
 
-[<img src="https://i.ytimg.com/vi/-q8KRX0P9gE/maxresdefault.jpg" width="50%">](https://www.youtube.com/watch?v=-q8KRX0P9gE "CubeAuthn Demo")
+> [!Note]
+> Check out the [demo video](https://www.youtube.com/watch?v=-q8KRX0P9gE) to see it in action!
+
+> [!WARNING]
+> This is a POC and cannot be super secure due to limitations of the Cube's bluetooth protocol
+
+[<img src="https://i.ytimg.com/vi/-q8KRX0P9gE/maxresdefault.jpg" width="100%">](https://www.youtube.com/watch?v=-q8KRX0P9gE "CubeAuthn Demo")
 
 ## Features
 - Register your cube scramble (and add your cube's MAC address for cube message decryption)
