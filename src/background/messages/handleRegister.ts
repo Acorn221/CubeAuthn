@@ -1,4 +1,4 @@
-import { getSecret, saveWebAuthnCredential } from "@/background/utils"
+import { getSecret, getSecretStorage, saveWebAuthnCredential } from "@/background/utils"
 
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
@@ -56,15 +56,13 @@ const handler: PlasmoMessaging.MessageHandler<
 
     // Get settings
     const storage = new Storage({ area: "sync" }) // Settings are stored in sync storage
-    const storageArea =
-      (await storage.get<"local" | "sync">("storageArea")) || "sync"
     const useSameCubeScramble =
       (await storage.get<boolean>("useSameCubeScramble")) || false
     const useStoredSecretEntropy =
       (await storage.get<boolean>("useStoredSecretEntropy")) || true
 
     // Use the appropriate storage area based on settings
-    const credentialStorage = new Storage({ area: storageArea })
+    const credentialStorage = await getSecretStorage();
 
     // Use fixed cube scramble if enabled and available
 
@@ -77,7 +75,7 @@ const handler: PlasmoMessaging.MessageHandler<
       useStoredSecretEntropy ? "yes" : "no"
     )
 
-    const secret = await getSecret(credentialStorage)
+    const secret = await getSecret();
 
     // Create WebAuthn credential using the cube state
     const { credential, naclKeyPair } = await createFakeCredentialIntercept({

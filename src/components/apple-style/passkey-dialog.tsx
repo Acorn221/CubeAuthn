@@ -91,7 +91,7 @@ const PasskeyDialog: React.FC = () => {
         setConnectionFailed(true)
       }
 
-      return { result }
+      return { result: true }
     },
     [macAddress, setFacelets, setIsConnected]
   )
