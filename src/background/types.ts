@@ -128,8 +128,12 @@ export interface WebAuthnCredential {
   id: string
   response: {
     clientDataJSON: number[]
-    attestationObject: number[]
-  }
+    attestationObject?: number[]
+    authenticatorData?: number[]
+    signature?: number[]
+    userHandle?: number[] | null
+  },
+  authenticatorAttachment?: string | null
 }
 
 export type PublicKeyCredentialRequestOptionsSerialized = Pick<
@@ -158,3 +162,4 @@ export type PublicKeyCredentialCreationOptionsSerialized = Pick<
     attestationFormat?: string
     extensions?: Record<string, any>
     };
+
