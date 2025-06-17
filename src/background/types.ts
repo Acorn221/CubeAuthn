@@ -132,6 +132,7 @@ export interface WebAuthnCredential {
     authenticatorData?: number[]
     signature?: number[]
     userHandle?: number[] | null
+    transports?: string[]
   },
   authenticatorAttachment?: string | null
 }

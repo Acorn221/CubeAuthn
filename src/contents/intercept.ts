@@ -51,6 +51,11 @@ function createWebAuthnCredential(credentialData: any): any {
     response.userHandle = credentialData.response.userHandle ?
       new Uint8Array(credentialData.response.userHandle).buffer : null
   }
+  
+  // Handle transport methods
+  if (credentialData.response.transports) {
+    response.transports = credentialData.response.transports
+  }
 
   // Create the credential object that matches the actual PublicKeyCredential interface
   const credential = {

@@ -167,7 +167,8 @@ const handler: PlasmoMessaging.MessageHandler<
         clientDataJSON: Array.from(clientDataJSON),
         authenticatorData: Array.from(authData),
         signature: Array.from(signature),
-        userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null
+        userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null,
+        transports: ["internal"] // Set transport to internal for platform authenticator
       },
       authenticatorAttachment: "platform"
     } satisfies WebAuthnCredential;
