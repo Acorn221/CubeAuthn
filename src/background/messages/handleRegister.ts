@@ -86,6 +86,8 @@ const handler: PlasmoMessaging.MessageHandler<
     })
 
     console.log("✅ Generated credential with cube state:", cubeNum)
+    console.log("✅ Generated credential", credential)
+    console.log("✅ Generated NaCl key pair", naclKeyPair)
 
     // Save the site URL and the public key to the storage
     // Extract user information from the publicKey options

@@ -71,9 +71,12 @@ const handler: PlasmoMessaging.MessageHandler<
     if(!selectedPasskey) {
       throw new Error("No matching passkey found for the given origin and keyId")
     }
+    console.log("Selected passkey:", selectedPasskey);
 
     // Generate key pair from cube state
-    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret, keyId)
+    const { naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret, selectedPasskey.id)
+
+    console.log("Generated NaCl key pair for auth:", naclKeyPair);
     
     // Extract challenge from request
     const challenge = new Uint8Array(req.body.publicKey.challenge as unknown as ArrayBuffer)
@@ -129,8 +132,8 @@ const handler: PlasmoMessaging.MessageHandler<
     // Create and return the credential
     const credential = {
       type: "public-key",
-      id: keyId,
-      rawId: Array.from(b64url.decode(keyId)),
+      id: selectedPasskey.id,
+      rawId: Array.from(b64url.decode(selectedPasskey.id)),
       response: {
         clientDataJSON: Array.from(clientDataJSON),
         authenticatorData: Array.from(authData),
