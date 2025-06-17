@@ -199,7 +199,7 @@ navigator.credentials.get = async function (
           }
         })
 
-        console.log("WebAuthn registration response:", res)
+        console.log("WebAuthn authentication response:", res)
 
         // Handle the response
         if (res.success && res.credential) {
@@ -213,11 +213,17 @@ navigator.credentials.get = async function (
           return webauthnCredential
         } else {
           // Handle error case
-          console.error("WebAuthn registration failed:", res.error)
+          console.error("WebAuthn authentication failed:", res.error)
+          
+          // If the error indicates no passkeys are available, fall back to the original method
+          if (res.error?.includes("No passkeys available") || !res.success) {
+            console.log("No passkeys available or authentication failed, falling back to original method")
+            return originalCredentialGet(options)
+          }
 
-          // Throw a proper WebAuthn error
+          // Otherwise throw a proper WebAuthn error
           const error = new DOMException(
-            res.error || "Registration failed",
+            res.error || "Authentication failed",
             "NotAllowedError"
           )
           throw error

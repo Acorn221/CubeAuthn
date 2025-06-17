@@ -28,6 +28,46 @@ const handler: PlasmoMessaging.MessageHandler<
   HandleAuthenticationResponse
 > = async (req, res) => {
   try {
+    // Get storage and passkeys
+    const storage = new Storage({ area: "sync" }) // Passkeys are stored in sync storage
+    const passkeys = await storage.get<StoredWebAuthnCredential[]>("webauthn_credentials")
+    const secret = await getSecret()
+    
+    // If no passkeys at all, bypass the auth dialog
+    if (!passkeys) {
+      console.log("No passkeys found in storage - bypassing auth dialog")
+      return res.send({
+        credential: null,
+        success: false,
+        error: "No passkeys available"
+      })
+    }
+    
+    // Check if there are any relevant credentials for this origin
+    const origin = new URL(req.body.url).origin
+    console.log("Checking for passkeys for origin:", origin)
+    console.log("Available passkeys:", passkeys.map(p => ({ origin: p.origin, id: p.id, user: p.user.displayName })))
+    
+    // More flexible matching - check both exact origin and without trailing slash
+    const relevantCredentials = passkeys.filter(cred => {
+      const credOrigin = cred.origin;
+      const originNoSlash = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+      const credOriginNoSlash = credOrigin.endsWith('/') ? credOrigin.slice(0, -1) : credOrigin;
+      
+      return credOrigin === origin || credOriginNoSlash === originNoSlash;
+    })
+    
+    console.log("Found relevant credentials:", relevantCredentials.length)
+    
+    if (relevantCredentials.length === 0) {
+      console.log("No relevant passkeys found for origin:", origin, "- bypassing auth dialog")
+      return res.send({
+        credential: null,
+        success: false,
+        error: "No passkeys available for this origin"
+      })
+    }
+    
     // Open the authentication dialog
     await ports.sendToTarget(
       "authDialog",
@@ -38,7 +78,7 @@ const handler: PlasmoMessaging.MessageHandler<
 
     // Wait for the user to set the cube and for the UI to send the cube number
     let unsubscribe: (() => void) | undefined
-    const { cubeNum, origin, keyId } = await new Promise<
+    const { cubeNum, origin: authOrigin, keyId } = await new Promise<
       InboundMessages["auth"]["request"]
     >((resolve) => {
       unsubscribe = ports.registerHandler("auth", async (data) => {
@@ -54,19 +94,7 @@ const handler: PlasmoMessaging.MessageHandler<
       `⏳ Creating WebAuthn credential with cube state: ${cubeNum}, origin: ${origin}, keyId: ${keyId}`
     )
 
-    const storage = new Storage({ area: "sync" }) // Passkeys are stored in sync storage
-    const secret = await getSecret()
-
-
-    const passkeys = await storage.get<StoredWebAuthnCredential[]>(
-      "webauthn_credentials"
-    );
-
-    if (!passkeys) {
-      throw new Error("No passkeys found in storage")
-    }
-
-    const selectedPasskey = passkeys.find(x => x.origin === origin && x.id === keyId);
+    const selectedPasskey = relevantCredentials.find(x => x.id === keyId);
 
     if(!selectedPasskey) {
       throw new Error("No matching passkey found for the given origin and keyId")
