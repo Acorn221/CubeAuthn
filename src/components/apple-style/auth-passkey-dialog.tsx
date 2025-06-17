@@ -1,10 +1,12 @@
-import React, { useCallback } from "react"
+import type {
+  PublicKeyCredentialRequestOptionsSerialized,
+  StoredWebAuthnCredential
+} from "@/background/types"
 import { useSendMessage } from "@/contents-helpers/port-messaging"
 import { BTCube } from "gan-i3-356-bluetooth"
+import React, { useCallback } from "react"
 
 import BasePasskeyDialog from "./base-passkey-dialog"
-import type { StoredWebAuthnCredential } from "@/background/types"
-import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
 
 interface AuthPasskeyDialogProps {
   isOpen: boolean
@@ -70,27 +72,22 @@ const AuthPasskeyDialog: React.FC<AuthPasskeyDialogProps> = ({
       onConnect={onConnect}
       title="Use CubeAuthn to sign in?"
       hideCubeWhenValid={false}>
-      
-      {publicAuthKey && (
+      {publicAuthKey && validCubeNum && (
         <div className="flex flex-col gap-4 w-full">
-          {validCubeNum ? (
-            <>
-              <div className="w-full text-md apple-dialog-description">
-                Login With:
-              </div>
+          <div className="w-full text-md apple-dialog-description">
+            Login With:
+          </div>
 
-              <div className="flex flex-col gap-2 w-full">
-                {relevantCredentials.map((cred) => (
-                  <button
-                    key={cred.id}
-                    onClick={() => handleAuthConfirm(cred.id)}
-                    className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
-                    {cred.user.displayName}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
+          <div className="flex flex-col gap-2 w-full">
+            {relevantCredentials.map((cred) => (
+              <button
+                key={cred.id}
+                onClick={() => handleAuthConfirm(cred.id)}
+                className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
+                {cred.user.displayName}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </BasePasskeyDialog>
