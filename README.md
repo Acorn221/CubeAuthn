@@ -24,8 +24,8 @@ Ever wanted rubiks cube based passkeys? No?! Well here it is anyway!
 Star the repo, send in a PR and add me on [LinkedIn](https://www.linkedin.com/in/acorn221/)!
 
 ## TODO:
-- [/] Tell the user if their mac address isn't setup in the overlay
-- [/] Setup the key gen properly, generate a random id with each key that is generated - this can be hashed with the secret+cubeNum to generate the private key
+- [x] Tell the user if their mac address isn't setup in the overlay
+- [x] Setup the key gen properly, generate a random id with each key that is generated - this can be hashed with the secret+cubeNum to generate the private key
 - [ ] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
 - [ ] Setup the authentication to actually work
 - [ ] Fix state management so when we re-register the cube is correctly displayed
