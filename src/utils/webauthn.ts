@@ -40,12 +40,12 @@ export const createFakeCredentialIntercept = async ({
 	const { credId, naclKeyPair } = await generateKeyPairFromCube(cubeNum, secret)
 
 	// Create a custom COSE key from the nacl public key
+	// TweetNaCl uses Ed25519, so we should use that curve identifier
 	const coseMap = new Map<number, number | Uint8Array>([
-		[1, 2], // kty: EC2
-		[3, -7], // alg: ES256
-		[-1, 1], // crv: P-256
-		[-2, naclKeyPair.publicKey.slice(0, 32)], // x: first 32 bytes of nacl public key
-		[-3, naclKeyPair.publicKey.slice(0, 32)] // y: first 32 bytes of nacl public key
+		[1, 1], // kty: OKP (Octet Key Pair) for Ed25519
+		[3, -8], // alg: EdDSA
+		[-1, 6], // crv: Ed25519
+		[-2, naclKeyPair.publicKey] // x: full public key for Ed25519
 	])
 
 	const coseKey = encodeCBOR(coseMap)

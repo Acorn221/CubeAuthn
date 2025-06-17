@@ -115,7 +115,7 @@ const handler: PlasmoMessaging.MessageHandler<
     dataToSign.set(authData, 0)
     dataToSign.set(clientDataHash, authData.length)
     
-    // Sign the data using the private key
+    // Sign the data using the private key with Ed25519 (TweetNaCl)
     const signature = nacl.sign.detached(dataToSign, naclKeyPair.secretKey)
     
     // Create and return the credential
@@ -127,7 +127,7 @@ const handler: PlasmoMessaging.MessageHandler<
         clientDataJSON: Array.from(clientDataJSON),
         authenticatorData: Array.from(authData),
         signature: Array.from(signature),
-        userHandle: null // TODO: set the userHandle as the `${rp.id}-${user.name}` b64 encoded
+        userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null
       },
       authenticatorAttachment: "platform",
     } satisfies WebAuthnCredential;
