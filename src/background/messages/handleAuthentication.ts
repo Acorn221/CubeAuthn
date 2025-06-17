@@ -122,7 +122,7 @@ const handler: PlasmoMessaging.MessageHandler<
     const credential = {
       type: "public-key",
       id: keyId,
-      rawId: Array.from(credId),
+      rawId: Array.from(b64url.decode(keyId)),
       response: {
         clientDataJSON: Array.from(clientDataJSON),
         authenticatorData: Array.from(authData),
