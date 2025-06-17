@@ -13,12 +13,12 @@
 
 .apple-dialog-backdrop {
   background-color: rgba(0, 0, 0, 0.6);
-  /* backdrop-filter: blur(10px); */
+  /* No backdrop blur as per original design */
   animation: fadeIn 0.2s ease;
 }
 
 .apple-dialog-container {
-  background-color: rgba(28, 28, 30, 0.92);
+  background-color: rgb(28, 28, 30);
   border-radius: 13px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.2s ease;
@@ -26,26 +26,29 @@
 }
 
 .apple-dialog-icon-container {
-  background-color: #323236;
-  border-radius: 50%;
+  background-color: #ffffff;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 8px;
 }
 
 .apple-dialog-title {
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.01em;
+  text-align: center;
 }
 
 .apple-dialog-description {
   color: rgba(235, 235, 245, 0.6);
-  font-size: 0.75rem;
-  line-height: 1.3;
-  max-width: 250px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  max-width: 280px;
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
 }
 
 /* iOS-style button */
@@ -56,11 +59,12 @@ button {
 }
 
 button:hover {
-  background-color: #0077ed;
+  background-color: #3b78e7;
+  opacity: 0.95;
 }
 
 button:active {
-  background-color: #0068d1;
+  background-color: #3367d6;
   transform: scale(0.98);
 }
 

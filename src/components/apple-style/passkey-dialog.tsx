@@ -3,13 +3,9 @@ import {
   useSendMessage
 } from "@/contents-helpers/port-messaging"
 import { BTCube } from "gan-i3-356-bluetooth"
-import { UserLock } from "lucide-react"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { cubeSVG } from "sr-visualizer"
 
 import { useStorage } from "@plasmohq/storage/hook"
-
-import RubiksCubeIcon from "./rubiks-cube-icon"
 
 import "./apple-style.css"
 
@@ -19,7 +15,9 @@ import type {
   StoredWebAuthnCredential
 } from "@/background/types"
 
-import { checkHash, generateHash } from "../../utils"
+import { checkHash } from "../../utils"
+import AuthPasskeyDialog from "./auth-passkey-dialog"
+import RegisterPasskeyDialog from "./register-passkey-dialog"
 
 const PasskeyDialog: React.FC = () => {
   const btCube = useRef(new BTCube())
@@ -49,17 +47,12 @@ const PasskeyDialog: React.FC = () => {
   )
 
   const relevantCredentials = useMemo(() => {
+    // TODO: CHECK THE ACCEPTED CREDS
     if (!webAuthnCredentials) return []
     return webAuthnCredentials.filter(
       (cred) => cred.origin === window.location.origin
     )
   }, [webAuthnCredentials])
-
-  const frontCubeRef = useRef<HTMLDivElement>()
-  const backCubeRef = useRef<HTMLDivElement>()
-
-  const sendRegister = useSendMessage("register")
-  const sendAuth = useSendMessage("auth")
 
   // Handle closing the dialog and resetting state
   const handleCloseDialog = useCallback(() => {
@@ -73,7 +66,7 @@ const PasskeyDialog: React.FC = () => {
     setIsScrambleValid(false)
   }, [])
 
-  // Handler for authentication requests
+  // Handler for registration requests
   useMessageHandler(
     "registerDialog",
     async (req) => {
@@ -96,11 +89,28 @@ const PasskeyDialog: React.FC = () => {
     [macAddress, setFacelets, setIsConnected]
   )
 
+  // Handler for authentication requests
   useMessageHandler("authDialog", async (req) => {
     setAuthPublicKey(req.publicKey)
     setShowAuthDialog(true)
     setConnectionFailed(true) // Setting connection failed to show the connect btn if the passkey was auto opened
-  })
+    
+    // Try to connect to the cube if we have a MAC address
+    if (macAddress) {
+      try {
+        await btCube.current.init(macAddress)
+        const result = btCube.current.isConnected()
+        setIsConnected(result)
+        if (result) {
+          setFacelets(btCube.current.getCube().facelets)
+          setConnectionFailed(false)
+        }
+      } catch (e) {
+        console.error("Failed to initialize Bluetooth Cube:", e)
+        setConnectionFailed(true)
+      }
+    }
+  }, [macAddress])
 
   const checkCubeScrambleAgainstHash = useCallback(async () => {
     if (!cubeScrambleHash) {
@@ -109,9 +119,9 @@ const PasskeyDialog: React.FC = () => {
     }
 
     const cube = btCube.current.getCube()
-    if (!cube) return undefined
-    const cubeNum = cube.getStateHex()
+    if (!cube) return false
 
+    const cubeNum = cube.getStateHex()
     const hash = await checkHash(cubeNum, cubeScrambleHash)
 
     if (hash) {
@@ -133,42 +143,6 @@ const PasskeyDialog: React.FC = () => {
     isConnected
   ])
 
-  const convertCubeFormat = useCallback((cubeString: string): string => {
-    const colorMap: Record<string, string> = {
-      U: "w",
-      R: "r",
-      F: "g",
-      D: "y",
-      L: "o",
-      B: "b"
-    }
-
-    return cubeString
-      .split("")
-      .map((face) => colorMap[face] || face)
-      .join("")
-  }, [])
-
-  useEffect(() => {
-    if (frontCubeRef.current) {
-      frontCubeRef.current.innerHTML = ""
-      cubeSVG(
-        frontCubeRef.current,
-        `r=x-270y-225x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
-      )
-    }
-  }, [frontCubeRef.current, facelets, convertCubeFormat, isConnected])
-
-  useEffect(() => {
-    if (backCubeRef.current) {
-      backCubeRef.current.innerHTML = ""
-      cubeSVG(
-        backCubeRef.current,
-        `r=x-90y-135x-20&size=300&fc=${convertCubeFormat(facelets)}` as any
-      )
-    }
-  }, [backCubeRef.current, facelets, convertCubeFormat, isConnected])
-
   useEffect(() => {
     const listener = (data) => {
       setIsConnected(true)
@@ -182,161 +156,49 @@ const PasskeyDialog: React.FC = () => {
     }
   }, [btCube.current, macAddress])
 
-  // Handle authentication confirmation
-  const handleRegisterConfirm = async () => {
-    try {
-      const cubeNum = btCube.current.getCube().getStateHex()
-      const isScrambleValid = await checkCubeScrambleAgainstHash()
-      if (!isScrambleValid) {
-        throw new Error("Cube scramble does not match the expected hash.")
-      }
-      btCube.current.stop()
+  const handleConnect = useCallback(() => {
+    setConnectionFailed(false)
+    btCube.current.init(macAddress)
+  }, [macAddress])
 
-      const res = await sendRegister({
-        cubeNum,
-        // getting the origin from the isolated cs for security
-        origin: window.location.origin
-      })
-
-      if (res.success) {
-        // Success animation could be added here
-        handleCloseDialog()
-      }
-    } catch (error) {
-      console.error("Authentication error:", error)
-    }
-  }
-
-  const handleAuthConfirm = useCallback(
-    async (keyId: string) => {
-      try {
-        const res = await sendAuth({
-          keyId,
-          origin: window.location.origin,
-          cubeNum: validCubeNum
-        })
-
-        if (res.success) {
-          handleCloseDialog()
-        }
-      } catch (error) {
-        console.error("Authentication error:", error)
-      }
-    },
-    [validCubeNum, publicAuthKey, sendAuth, handleCloseDialog]
-  )
+  const isRegisterMode = publicRegisterKey !== undefined
+  const isAuthMode = publicAuthKey !== undefined
 
   return (
     <>
-      {showAuthDialog && (
-        <div
-          className="fixed inset-0 apple-dialog-backdrop flex items-center justify-center z-[9999] apple-dialog"
-          onClick={handleCloseDialog}>
-          <div
-            className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-4"
-            onClick={(e) => e.stopPropagation()} // Prevent clicks on the dialog from closing it
-          >
-            {/* Header with Sign In text and Cancel button */}
-            <div className="flex cursor-default">
-              <div className="flex-1 top-4 flex items-center">
-                <UserLock className="size-6" />
-                <span className="text-md font-medium ml-2">Sign In</span>
-              </div>
-              <div>
-                <button
-                  onClick={handleCloseDialog}
-                  className="px-3 py-1 rounded-md bg-[#3a3a3c] text-white text-sm font-normal cursor-pointer">
-                  Cancel
-                </button>
-              </div>
-            </div>
-            <div className="w-full h-[1px] bg-[#3a3a3c] mb-2" />
-            {/* Content */}
-            <div className="px-4 flex flex-col items-center cursor-default">
-              <div className="w-14 h-14 apple-dialog-icon-container flex items-center justify-center mb-4">
-                <RubiksCubeIcon className="w-14 h-14" />
-              </div>
+      {isRegisterMode && (
+        <RegisterPasskeyDialog
+          isOpen={showAuthDialog}
+          onClose={handleCloseDialog}
+          btCube={btCube}
+          isConnected={isConnected}
+          connectionFailed={connectionFailed}
+          facelets={facelets}
+          isScrambleValid={isScrambleValid}
+          validCubeNum={validCubeNum}
+          macAddress={macAddress}
+          onConnect={handleConnect}
+          publicRegisterKey={publicRegisterKey}
+          cubeScrambleHash={cubeScrambleHash}
+          checkCubeScrambleAgainstHash={checkCubeScrambleAgainstHash}
+        />
+      )}
 
-              <h2 className="text-lg apple-dialog-title mb-1">
-                Use CubeAuthn to sign in?
-              </h2>
-
-              {publicRegisterKey && (
-                <p className="apple-dialog-description text-center text-xs mb-2">
-                  A passkey will be created for "
-                  {publicRegisterKey.user.displayName}" on this extension and
-                  synced with your google account.
-                </p>
-              )}
-
-              {isConnected && (
-                <div
-                  className={`w-full flex cube-container mb-2 ${validCubeNum && publicAuthKey ? "h-0" : "h-full"} animate-in animate-out`}>
-                  <div ref={frontCubeRef as any} className="flex-1" />
-                  <div ref={backCubeRef as any} className="flex-1" />
-                </div>
-              )}
-
-              {!isConnected && !connectionFailed && (
-                <div className="text-center my-4 text-xs text-[#8e8e93]">
-                  Connecting to the Cube...
-                </div>
-              )}
-
-              {!(validCubeNum && publicAuthKey) && (
-                <>
-                  {!isScrambleValid && isConnected && (
-                    <div className="text-center my-4 text-xs text-muted-foreground">
-                      Invalid scramble ❌
-                    </div>
-                  )}
-                  {isScrambleValid && isConnected && (
-                    <div className="text-center my-4 text-xs text-muted-foreground">
-                      Valid scramble ✅
-                    </div>
-                  )}
-                </>
-              )}
-
-              {publicAuthKey && validCubeNum && (
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="w-full text-md apple-dialog-description">
-                    Login With:
-                  </div>
-
-                  <div className="flex flex-col gap-2 w-full">
-                    {relevantCredentials.map((cred) => (
-                      <button
-                        onClick={() => handleAuthConfirm(cred.id)}
-                        className="w-full py-3 rounded-md bg-[#0071e3] text-white font-medium text-sm">
-                        {cred.user.displayName}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {isConnected && publicRegisterKey && (
-                <button
-                  onClick={handleRegisterConfirm}
-                  disabled={!isScrambleValid}
-                  className={`w-full py-3 rounded-md ${isScrambleValid ? "bg-[#0071e3]" : "bg-[#0071e3]/50 hover:bg-[#0071e3]/50"} text-white font-medium text-sm`}>
-                  {cubeScrambleHash ? "Confirm" : "Confirm Scramble"}
-                </button>
-              )}
-              {!isConnected && connectionFailed && (
-                <button
-                  onClick={() => {
-                    setConnectionFailed(false)
-                    btCube.current.init(macAddress)
-                  }}
-                  className="w-full py-3 rounded-md bg-[#3a3a3c] text-white font-medium text-sm">
-                  Connect to Cube
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+      {isAuthMode && (
+        <AuthPasskeyDialog
+          isOpen={showAuthDialog}
+          onClose={handleCloseDialog}
+          btCube={btCube}
+          isConnected={isConnected}
+          connectionFailed={connectionFailed}
+          facelets={facelets}
+          isScrambleValid={isScrambleValid}
+          validCubeNum={validCubeNum}
+          macAddress={macAddress}
+          onConnect={handleConnect}
+          publicAuthKey={publicAuthKey}
+          relevantCredentials={relevantCredentials}
+        />
       )}
     </>
   )
