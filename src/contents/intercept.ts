@@ -6,7 +6,7 @@ import type {
   HandleRegisterRequest,
   HandleRegisterResponse
 } from "@/background/messages/handleRegister"
-import type { PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
+import type { PublicKeyCredentialCreationOptionsSerialized, PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
 import type { PlasmoCSConfig } from "plasmo"
 
 import { sendToBackgroundViaRelay } from "@plasmohq/messaging"
@@ -109,7 +109,7 @@ navigator.credentials.create = async function (
             )
           )
         }
-      }
+      };
 
       const res = await sendToBackgroundViaRelay<
         HandleRegisterRequest,
@@ -117,7 +117,7 @@ navigator.credentials.create = async function (
       >({
         name: "handleRegister",
         body: {
-          publicKey: publicKeyForSerialization as any, // Type assertion needed for serialization
+          publicKey: publicKeyForSerialization as any, // TODO: fix types
           url: window.location.href
         }
       })
