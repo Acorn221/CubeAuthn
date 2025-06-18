@@ -1,4 +1,4 @@
-import "./set-scramble/styles.css"
+import "@/tabs/set-scramble/styles.css"
 
 import RubiksCubeIcon from "@/components/apple-style/rubiks-cube-icon"
 import { BTCube } from "gan-i3-356-bluetooth"

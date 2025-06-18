@@ -4,10 +4,6 @@
   "version": "0.0.1",
   "description": "Use your cube to login to things! (POC)",
   "author": "james@rno.tt",
-  "engines": {
-    "npm": ">=7.0.0",
-    "node": ">=16.0.0"
-  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
