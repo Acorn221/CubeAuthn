@@ -26,10 +26,10 @@ Star the repo, send in a PR and add me on [LinkedIn](https://www.linkedin.com/in
 ## TODO:
 - [x] Tell the user if their mac address isn't setup in the overlay
 - [x] Setup the key gen properly, generate a random id with each key that is generated - this can be hashed with the secret+cubeNum to generate the private key
-- [ ] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
-- [ ] Setup the authentication to actually work
-- [ ] Fix state management so when we re-register the cube is correctly displayed
+- [x] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
+- [x] Setup the authentication to actually work
+- [x] Fix state management so when we re-register the cube is correctly displayed
 - [ ] Make sure we set the secret to undefined when the user chooses to do so
 - [ ] Use an Iframe to display a tab page which handles the connection to the cube
 - [ ] Have an option to use a virtual cube (for testing)
-- [ ] Add a timeout timer so we don't overrun it
+- [ ] Add a timeout timer so we don't overrun the given timeout from the site
