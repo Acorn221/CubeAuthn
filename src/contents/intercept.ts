@@ -17,24 +17,27 @@ export const config: PlasmoCSConfig = {
   world: "MAIN"
 }
 
-// Helper function to convert our serialized credential to a proper WebAuthn PublicKeyCredential
+/**
+ * Converts a serialized credential back to a proper WebAuthn PublicKeyCredential
+ *
+ * @param credentialData - The serialized credential data from the background script
+ * @returns A WebAuthn-compatible credential object
+ */
 function createWebAuthnCredential(credentialData: any): any {
-  // Convert arrays back to ArrayBuffers
   const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
 
-  // Create the response object based on what fields are present
   const response: any = {
     clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer
   }
 
-  // Handle attestation response (for registration)
+  // Add attestationObject for registration responses
   if (credentialData.response.attestationObject) {
     response.attestationObject = new Uint8Array(
       credentialData.response.attestationObject
     ).buffer
   }
 
-  // Handle assertion response (for authentication)
+  // Add authenticatorData for authentication responses
   if (credentialData.response.authenticatorData) {
     response.authenticatorData = new Uint8Array(
       credentialData.response.authenticatorData
@@ -52,14 +55,12 @@ function createWebAuthnCredential(credentialData: any): any {
       new Uint8Array(credentialData.response.userHandle).buffer : null
   }
   
-  // Handle transport methods
   if (credentialData.response.transports) {
     response.transports = credentialData.response.transports
   }
 
-  // Create the credential object that matches the actual PublicKeyCredential interface
   const credential = {
-    id: credentialData.id, // This should already be base64url encoded
+    id: credentialData.id,
     type: "public-key",
     rawId: rawIdBuffer,
     response,
@@ -72,7 +73,7 @@ function createWebAuthnCredential(credentialData: any): any {
   return credential
 }
 
-// Store the original credential methods
+// Store references to the original WebAuthn methods
 const originalCredentialCreate = navigator.credentials.create.bind(
   navigator.credentials
 )
@@ -80,20 +81,15 @@ const originalCredentialGet = navigator.credentials.get.bind(
   navigator.credentials
 )
 
-// Create a proxy for the credentials.create method
+/**
+ * Override for navigator.credentials.create to intercept WebAuthn registration requests
+ */
 navigator.credentials.create = async function (
   options: CredentialCreationOptions
 ): Promise<Credential | null> {
-  console.log("WebAuthn credential creation intercepted", options)
-
-  // Check if this is a WebAuthn request
   if (options?.publicKey) {
-    console.log("Sending msg to background script for WebAuthn registration")
-
     try {
-      console.log(`PUBLIC KEY`, options.publicKey)
-
-      // Convert BufferSource fields to arrays for serialization
+      // Serialize the publicKey options for message passing
       const publicKeyForSerialization = {
         ...options.publicKey,
         challenge: Array.from(
@@ -126,12 +122,7 @@ navigator.credentials.create = async function (
         }
       })
 
-      console.log("WebAuthn registration response:", res)
-
-      // Handle the response
       if (res.success && res.credential) {
-        console.log("Successfully created WebAuthn credential with cube state")
-
         // Convert the serialized credential to a proper WebAuthn credential object
         const webauthnCredential = createWebAuthnCredential(res.credential)
 
@@ -162,96 +153,73 @@ navigator.credentials.create = async function (
     }
   }
 
-  console.warn("No publicKey in options, falling back to original method")
-
   // Fall back to original method for non-WebAuthn requests
   return originalCredentialCreate(options)
 }
 
+/**
+ * Override for navigator.credentials.get to intercept WebAuthn authentication requests
+ */
 navigator.credentials.get = async function (
   options: CredentialRequestOptions
 ): Promise<Credential | null> {
-  console.log("WebAuthn credential retrieval intercepted", options)
-
   if (options?.publicKey) {
-    // Check if this is a WebAuthn request
-    if (options?.publicKey) {
-      console.log("Sending msg to background script for WebAuthn registration")
-
-      try {
-        console.log(`PUBLIC KEY`, options.publicKey)
-
-        // Convert BufferSource fields to arrays for serialization
-        const publicKeyForSerialization = {
-          ...options.publicKey,
-          challenge: Array.from(
-            new Uint8Array(
-              options.publicKey.challenge instanceof ArrayBuffer
-                ? options.publicKey.challenge
-                : options.publicKey.challenge.buffer
-            )
+    try {
+      // Serialize the publicKey options for message passing
+      const publicKeyForSerialization = {
+        ...options.publicKey,
+        challenge: Array.from(
+          new Uint8Array(
+            options.publicKey.challenge instanceof ArrayBuffer
+              ? options.publicKey.challenge
+              : options.publicKey.challenge.buffer
           )
-        } satisfies PublicKeyCredentialRequestOptionsSerialized
+        )
+      } satisfies PublicKeyCredentialRequestOptionsSerialized
 
-        const res = await sendToBackgroundViaRelay<
-          HandleAuthenticationRequest,
-          HandleAuthenticationResponse
-        >({
-          name: "handleAuthentication",
-          body: {
-            publicKey: publicKeyForSerialization,
-            url: window.location.href
-          }
-        })
-
-        console.log("WebAuthn authentication response:", res)
-
-        // Handle the response
-        if (res.success && res.credential) {
-          console.log(
-            "Successfully created WebAuthn credential with cube state"
-          )
-
-          // Convert the serialized credential to a proper WebAuthn credential object
-          const webauthnCredential = createWebAuthnCredential(res.credential)
-
-          return webauthnCredential
-        } else {
-          // Handle error case
-          console.error("WebAuthn authentication failed:", res.error)
-          
-          // If the error indicates no passkeys are available, fall back to the original method
-          if (res.error?.includes("No passkeys available") || !res.success) {
-            console.log("No passkeys available or authentication failed, falling back to original method")
-            return originalCredentialGet(options)
-          }
-
-          // Otherwise throw a proper WebAuthn error
-          const error = new DOMException(
-            res.error || "Authentication failed",
-            "NotAllowedError"
-          )
-          throw error
+      const res = await sendToBackgroundViaRelay<
+        HandleAuthenticationRequest,
+        HandleAuthenticationResponse
+      >({
+        name: "handleAuthentication",
+        body: {
+          publicKey: publicKeyForSerialization,
+          url: window.location.href
         }
-      } catch (error) {
-        console.error("Error during WebAuthn registration:", error)
+      })
 
-        // Re-throw as a WebAuthn-compatible error
-        if (error instanceof DOMException) {
-          throw error
-        } else {
-          throw new DOMException(
-            "An error occurred during registration",
-            "UnknownError"
-          )
+      if (res.success && res.credential) {
+        // Convert the serialized credential to a proper WebAuthn credential object
+        const webauthnCredential = createWebAuthnCredential(res.credential)
+
+        return webauthnCredential
+      } else {
+        // If no passkeys are available, fall back to the original method
+        if (res.error?.includes("No passkeys available") || !res.success) {
+          return originalCredentialGet(options)
         }
+
+        // Throw a proper WebAuthn error
+        const error = new DOMException(
+          res.error || "Authentication failed",
+          "NotAllowedError"
+        )
+        throw error
+      }
+    } catch (error) {
+      // Re-throw as a WebAuthn-compatible error
+      if (error instanceof DOMException) {
+        throw error
+      } else {
+        throw new DOMException(
+          "An error occurred during authentication",
+          "UnknownError"
+        )
       }
     }
   }
 
-  console.warn("No publicKey in options, falling back to original method")
-
   return originalCredentialGet(options)
 }
 
-console.log("WebAuthn interception initialized")
+// WebAuthn interception is now initialized

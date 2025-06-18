@@ -33,3 +33,4 @@ Star the repo, send in a PR and add me on [LinkedIn](https://www.linkedin.com/in
 - [ ] Use an Iframe to display a tab page which handles the connection to the cube
 - [ ] Have an option to use a virtual cube (for testing)
 - [ ] Add a timeout timer so we don't overrun the given timeout from the site
+- [ ] Make a WASM script to brute force the MAC address on onboarding
