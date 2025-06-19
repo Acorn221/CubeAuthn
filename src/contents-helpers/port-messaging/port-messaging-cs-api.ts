@@ -403,7 +403,7 @@ export class PortClient<
 
   private async sendConnectionInfo(): Promise<void> {
     // Register a one-time handler for the connection info request
-    const cleanup = this.on('getUrlAndTab' as any, () => {
+    const cleanup = this.on('getUrlAndTab', () => {
       return {
         url: window.location.href,
         tabId: chrome.devtools?.inspectedWindow?.tabId || undefined
