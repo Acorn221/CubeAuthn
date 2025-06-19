@@ -1,9 +1,9 @@
 {
-  "name": "rubiks-cube-webauthn",
-  "displayName": "Rubiks cube scramble webauthn",
+  "name": "cubeauthn",
+  "displayName": "CubeAuthn",
   "version": "0.0.1",
-  "description": "Use your cube to login to things! (POC)",
-  "author": "james@rno.tt",
+  "description": "Use your cube as a PassKey to login to things! (POC)",
+  "author": "James Arnott <james@rno.tt>",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
