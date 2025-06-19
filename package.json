@@ -1,6 +1,6 @@
 {
   "name": "rubiks-cube-webauthn",
-  "displayName": "Rubiks cube webauthn",
+  "displayName": "Rubiks cube scramble webauthn",
   "version": "0.0.1",
   "description": "Use your cube to login to things! (POC)",
   "author": "james@rno.tt",
