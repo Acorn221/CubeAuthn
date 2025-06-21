@@ -6,7 +6,7 @@ Ever wanted rubiks cube based passkeys? No?! Well here it is anyway!
 (Only currently works with GAN 356 i3)
 
 > [!Note]
-> Check out the [demo video](https://www.youtube.com/watch?v=-q8KRX0P9gE) to see it in action!
+> Check out the [demo video](https://www.youtube.com/watch?v=-q8KRX0P9gE) to see it in action or [get it here](https://chromewebstore.google.com/detail/cubeauthn/koncigmbjmoapojihipbpfnmgkhmdlfl) on the chrome web store!
 
 > [!WARNING]
 > This is a POC and cannot be super secure due to limitations of the Cube's bluetooth protocol
