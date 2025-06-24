@@ -51,7 +51,6 @@
     "permissions": [
       "nativeMessaging",
       "tabs"
-    ],
-    "key": "$PUBLIC_KEY"
+    ]
   }
 }
