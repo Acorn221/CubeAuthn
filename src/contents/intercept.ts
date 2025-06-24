@@ -27,7 +27,8 @@ function createWebAuthnCredential(credentialData: any): any {
   const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
 
   const response: any = {
-    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer
+    ...credentialData.response,
+    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer,
   }
 
   // Add attestationObject for registration responses
