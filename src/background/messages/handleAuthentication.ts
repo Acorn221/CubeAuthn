@@ -168,7 +168,6 @@ const handler: PlasmoMessaging.MessageHandler<
         authenticatorData: Array.from(authData),
         signature: Array.from(signature),
         userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null,
-        transports: ["internal", "hybrid"],
       },
       authenticatorAttachment: "platform",
       clientExtensionResults: {

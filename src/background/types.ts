@@ -52,6 +52,7 @@ export type SerializablePublicKeyCredential = {
   type: string
   rawId: string // ArrayBuffer -> base64
   authenticatorAttachment: string | null
+  transports?: string[]
   response: {
     clientDataJSON: string // ArrayBuffer -> base64
     // For AuthenticatorAttestationResponse
@@ -59,7 +60,6 @@ export type SerializablePublicKeyCredential = {
     authenticatorData?: string // ArrayBuffer -> base64
     publicKey?: string | null // ArrayBuffer -> base64
     publicKeyAlgorithm?: number
-    transports?: string[]
     // For AuthenticatorAssertionResponse
     signature?: string // ArrayBuffer -> base64
     userHandle?: string | null // ArrayBuffer -> base64
@@ -125,14 +125,14 @@ export type CubeHashConfig =
 export interface WebAuthnCredential {
   type: string
   rawId: number[]
-  id: string
+  id: string,
+  transports?: string[]
   response: {
     clientDataJSON: number[]
     attestationObject?: number[]
     authenticatorData?: number[]
     signature?: number[]
     userHandle?: number[] | null
-    transports?: string[]
   },
   authenticatorAttachment?: string | null
   clientExtensionResults?: {

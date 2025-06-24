@@ -104,10 +104,10 @@ export const createFakeCredentialIntercept = async ({
 			type: "public-key",
 			rawId: Array.from(credId),
 			id: b64url.encode(credId),
+			transports: ["hybrid", "internal"], // Set default transport to internal for platform authenticator
 			response: {
 				clientDataJSON: Array.from(clientDataJSON),
 				attestationObject: Array.from(attestationObject),
-				transports: ["hybrid", "internal"] // Set default transport to internal for platform authenticator
 			},
 			authenticatorAttachment: "platform",
 			clientExtensionResults: {

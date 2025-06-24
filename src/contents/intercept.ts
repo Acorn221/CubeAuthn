@@ -26,57 +26,66 @@ export const config: PlasmoCSConfig = {
  * @param credentialData - The serialized credential data from the background script
  * @returns A WebAuthn-compatible credential object
  */
+/**
+ * Converts a serialized credential back to a proper WebAuthn PublicKeyCredential
+ *
+ * @param credentialData - The serialized credential data from the background script
+ * @returns A WebAuthn-compatible credential object
+ */
 function createWebAuthnCredential(credentialData: any): any {
-  const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
+  // Safely extract top-level properties with fallbacks
+  const id = credentialData.id
+  const rawId = credentialData.rawId || []
+  const authenticatorAttachment = credentialData.authenticatorAttachment
+  const responseData = credentialData.response || {}
 
+  console.log("TRANSPORTS CRED DATA", credentialData.transports);
+
+  // Create buffer from rawId
+  const rawIdBuffer = new Uint8Array(rawId).buffer
+
+  // Create the response object with proper buffer conversions and fallbacks
   const response: any = {
-    // include transports if present
-    transports: credentialData.response.transports || [],
-    // include public key algirthm if present
-    publicKeyAlgorithm: credentialData.response.publicKeyAlgorithm || null,
-    authenticatorData: credentialData.response.authenticatorData
-      ? new Uint8Array(credentialData.response.authenticatorData).buffer
+    // Handle buffer conversions safely
+    authenticatorData: responseData.authenticatorData
+      ? new Uint8Array(responseData.authenticatorData).buffer
       : null,
 
-    attestationObject: credentialData.response.attestationObject ? new Uint8Array(
-      credentialData.response.attestationObject
-    ).buffer : null,
-
-    signature: credentialData.response.signature
-      ? new Uint8Array(credentialData.response.signature).buffer
+    attestationObject: responseData.attestationObject
+      ? new Uint8Array(responseData.attestationObject).buffer
       : null,
 
-    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON)
-      .buffer
+    signature: responseData.signature
+      ? new Uint8Array(responseData.signature).buffer
+      : null,
+
+    // clientDataJSON should always be present
+    clientDataJSON: responseData.clientDataJSON
+      ? new Uint8Array(responseData.clientDataJSON).buffer
+      : new Uint8Array([]).buffer
   }
 
-  if (credentialData.response.userHandle !== undefined) {
-    response.userHandle = credentialData.response.user
-      ? Array.from(new TextEncoder().encode(credentialData.response.user.id))
+  // Add userHandle if present
+  if (responseData.userHandle !== undefined) {
+    response.userHandle = responseData.userHandle
+      ? new Uint8Array(responseData.userHandle).buffer
       : null
-    // response.userHandle = credentialData.response.userHandle ?
-    //   new Uint8Array(credentialData.response.userHandle).buffer : null
   }
 
-  if (credentialData.response.transports) {
-    response.transports = credentialData.response.transports
-  }
-
-  const credential = {
-    // include the authenticatorAttachment if present
-    authenticatorAttachment: credentialData.authenticatorAttachment || null,
-    // include
-    id: credentialData.id,
+  // Return the complete credential object
+  return {
+    authenticatorAttachment: authenticatorAttachment || null,
+    id,
     type: "public-key",
     rawId: rawIdBuffer,
     response,
-
+    clientExtensionResults: credentialData.clientExtensionResults || {"credProps": {"rk": true}},
+    ...(credentialData.response.transports && { transports: credentialData.response.transports }),
     getClientExtensionResults() {
-      return {}
-    }
+      return credentialData.clientExtensionResults || {"credProps": {"rk": true}}
+    },
+    publicKeyAlgorithm: responseData.publicKeyAlgorithm || null,
   }
-
-  return credential
 }
 
 // Store references to the original WebAuthn methods
