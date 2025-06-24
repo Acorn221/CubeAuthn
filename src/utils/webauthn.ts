@@ -72,7 +72,7 @@ export const createFakeCredentialIntercept = async ({
 		...credIdLen,
 		...credId,
 		...coseKey
-	])
+	]);
 
 	// Create client data JSON
 	const clientDataJSON = new TextEncoder().encode(
@@ -80,7 +80,9 @@ export const createFakeCredentialIntercept = async ({
 			type: "webauthn.create",
 			challenge: b64url.encode(challenge),
 			origin,
-			crossOrigin: false
+			crossOrigin: false,
+			// Keeping this in to make it look the same as Chrome's output
+      "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex",
 		})
 	)
 
@@ -105,7 +107,13 @@ export const createFakeCredentialIntercept = async ({
 			response: {
 				clientDataJSON: Array.from(clientDataJSON),
 				attestationObject: Array.from(attestationObject),
-				transports: ["internal"] // Set default transport to internal for platform authenticator
+				transports: ["hybrid", "internal"] // Set default transport to internal for platform authenticator
+			},
+			authenticatorAttachment: "platform",
+			clientExtensionResults: {
+				credProps: {
+					rk: true
+				}
 			}
 		},
 		credId,

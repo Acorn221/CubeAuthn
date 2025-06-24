@@ -6,7 +6,10 @@ import type {
   HandleRegisterRequest,
   HandleRegisterResponse
 } from "@/background/messages/handleRegister"
-import type { PublicKeyCredentialCreationOptionsSerialized, PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
+import type {
+  PublicKeyCredentialCreationOptionsSerialized,
+  PublicKeyCredentialRequestOptionsSerialized
+} from "@/background/types"
 import type { PlasmoCSConfig } from "plasmo"
 
 import { sendToBackgroundViaRelay } from "@plasmohq/messaging"
@@ -27,40 +30,42 @@ function createWebAuthnCredential(credentialData: any): any {
   const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
 
   const response: any = {
-    ...credentialData.response,
-    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer,
-  }
+    // include transports if present
+    transports: credentialData.response.transports || [],
+    // include public key algirthm if present
+    publicKeyAlgorithm: credentialData.response.publicKeyAlgorithm || null,
+    authenticatorData: credentialData.response.authenticatorData
+      ? new Uint8Array(credentialData.response.authenticatorData).buffer
+      : null,
 
-  // Add attestationObject for registration responses
-  if (credentialData.response.attestationObject) {
-    response.attestationObject = new Uint8Array(
+    attestationObject: credentialData.response.attestationObject ? new Uint8Array(
       credentialData.response.attestationObject
-    ).buffer
-  }
+    ).buffer : null,
 
-  // Add authenticatorData for authentication responses
-  if (credentialData.response.authenticatorData) {
-    response.authenticatorData = new Uint8Array(
-      credentialData.response.authenticatorData
-    ).buffer
-  }
+    signature: credentialData.response.signature
+      ? new Uint8Array(credentialData.response.signature).buffer
+      : null,
 
-  if (credentialData.response.signature) {
-    response.signature = new Uint8Array(
-      credentialData.response.signature
-    ).buffer
+    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON)
+      .buffer
   }
 
   if (credentialData.response.userHandle !== undefined) {
-    response.userHandle = credentialData.response.userHandle ?
-      new Uint8Array(credentialData.response.userHandle).buffer : null
+    response.userHandle = credentialData.response.user
+      ? Array.from(new TextEncoder().encode(credentialData.response.user.id))
+      : null
+    // response.userHandle = credentialData.response.userHandle ?
+    //   new Uint8Array(credentialData.response.userHandle).buffer : null
   }
-  
+
   if (credentialData.response.transports) {
     response.transports = credentialData.response.transports
   }
 
   const credential = {
+    // include the authenticatorAttachment if present
+    authenticatorAttachment: credentialData.authenticatorAttachment || null,
+    // include
     id: credentialData.id,
     type: "public-key",
     rawId: rawIdBuffer,
@@ -110,7 +115,7 @@ navigator.credentials.create = async function (
             )
           )
         }
-      };
+      }
 
       const res = await sendToBackgroundViaRelay<
         HandleRegisterRequest,

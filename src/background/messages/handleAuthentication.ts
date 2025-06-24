@@ -168,9 +168,14 @@ const handler: PlasmoMessaging.MessageHandler<
         authenticatorData: Array.from(authData),
         signature: Array.from(signature),
         userHandle: selectedPasskey.user ? Array.from(new TextEncoder().encode(selectedPasskey.user.id)) : null,
-        transports: ["internal"] // Set transport to internal for platform authenticator
+        transports: ["internal", "hybrid"],
       },
-      authenticatorAttachment: "platform"
+      authenticatorAttachment: "platform",
+      clientExtensionResults: {
+        credProps: {
+          rk: true
+        }
+      }
     } satisfies WebAuthnCredential;
     
     console.log("✅ Generated authentication credential for site:", req.body.url)

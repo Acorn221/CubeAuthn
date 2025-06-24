@@ -135,6 +135,11 @@ export interface WebAuthnCredential {
     transports?: string[]
   },
   authenticatorAttachment?: string | null
+  clientExtensionResults?: {
+    credProps: {
+      rk: boolean;
+    }
+  }
 }
 
 export type PublicKeyCredentialRequestOptionsSerialized = Pick<
