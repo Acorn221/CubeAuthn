@@ -26,6 +26,10 @@ const handler: PlasmoMessaging.MessageHandler<
   HandleRegisterResponse
 > = async (req, res) => {
   try {
+    const tabId = (await chrome.tabs.query({ active: true, currentWindow: true, windowType: "normal" }))[0]?.id;
+    chrome.sidePanel.open({ tabId });
+
+    return;
     const registerInstanceId = crypto.randomUUID();
     // Open the authentication dialog - also gets the origin which we can trust
     const trustedOrigin = await ports.sendToTarget(
