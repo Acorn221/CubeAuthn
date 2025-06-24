@@ -26,17 +26,38 @@ const handler: PlasmoMessaging.MessageHandler<
   HandleRegisterResponse
 > = async (req, res) => {
   try {
-    // Open the authentication dialog
-    const opened = await ports.sendToTarget(
-      "registerDialog",
-      { publicKey: req.body.publicKey },
+    const registerInstanceId = crypto.randomUUID();
+    // Open the authentication dialog - also gets the origin which we can trust
+    const trustedOrigin = await ports.sendToTarget(
+      "openDialog",
+      { type: "register", id: registerInstanceId },
       { url: req.body.url },
       true
-    )
+    );
 
-    if (!opened) {
+    if (!trustedOrigin) {
       throw new Error("Failed to connect to the isolated content script")
     }
+
+    let unsubscribeIframe: (() => void) | undefined
+    await new Promise<void>((resolve) => {
+      unsubscribeIframe = ports.registerHandler("iframeReady", async (data) => {
+        if(!data || data.id !== registerInstanceId) {
+          console.warn("Received iframeReady message with unexpected ID:", data?.id);
+          return;
+        }
+
+        resolve();
+      })
+    })
+
+    unsubscribeIframe?.()
+
+    const iframeResponse = await ports.sendToTarget("registerDialog", {
+      publicKey: req.body.publicKey
+    }, { url: chrome.runtime.getURL("/tabs/auth-iframe.html") }, true);
+
+    // TODO: SEND THE IFRAME A MESSAGE ABOUT THE ORIGIN AND WHICH PASSKEY TO USE
 
     // Wait for the user to set the cube and for the UI to send the cube number
     let unsubscribe: (() => void) | undefined

@@ -29,8 +29,10 @@ Star the repo, send in a PR and add me on [LinkedIn](https://www.linkedin.com/in
 - [x] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
 - [x] Setup the authentication to actually work
 - [x] Fix state management so when we re-register the cube is correctly displayed
-- [ ] Make sure we set the secret to undefined when the user chooses to do so
-- [ ] Use an Iframe to display a tab page which handles the connection to the cube
+- [x] Have a random UUID generated for each request from bg -> cs/tab so we don't get confused with multiple requests
+- [~] Use an Iframe to display a tab page which handles the connection to the cube
 - [ ] Have an option to use a virtual cube (for testing)
 - [ ] Add a timeout timer so we don't overrun the given timeout from the site
 - [ ] Make a WASM script to brute force the MAC address on onboarding
+- [ ] Make sure we set the secret to undefined when the user chooses to do so
+- [ ] Allow the user to encrypt the secret with a device passkey as an extra layer of security

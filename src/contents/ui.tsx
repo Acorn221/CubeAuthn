@@ -35,13 +35,8 @@ export const getStyle = (): HTMLStyleElement => {
 }
 
 const AuthIframe = () => {
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
-  const [publicRegisterKey, setRegisterPublicKey] = useState<
-    CredentialCreationOptions["publicKey"] | undefined
-  >()
-  const [publicAuthKey, setAuthPublicKey] = useState<
-    PublicKeyCredentialRequestOptionsSerialized | undefined
-  >()
+  const [dialogToShow, setDialogToShow] = useState<"register" | "auth" | null>("auth");
+  const [instanceId, setInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
     initPortClient({ timeout: 1000 * 60 * 15 }).catch((error) => {
@@ -50,22 +45,20 @@ const AuthIframe = () => {
   }, [])
 
   useMessageHandler(
-    "registerDialog",
-    async (req) => {
-      let result: boolean | undefined
-      setShowAuthDialog(true)
-      setRegisterPublicKey(req.publicKey)
-
-      return { result: true }
+    "openDialog",
+    async (msg) => {
+      setDialogToShow(msg.type);
+      setInstanceId(msg.id);
+      return { origin: window.location.origin }
     },
     []
   )
 
-  if (showAuthDialog) {
+  if (dialogToShow) {
     return (
       <div
         className="fixed inset-0 apple-dialog-backdrop flex items-center justify-center z-[9999] apple-dialog"
-        onClick={() => setShowAuthDialog(false)}>
+        onClick={() => setDialogToShow(null)}>
         <div
           className="w-[360px] apple-dialog-container text-white rounded-lg shadow-xl overflow-hidden flex flex-col gap-2 p-5"
           onClick={(e) => e.stopPropagation()} // Prevent clicks on the dialog from closing it
@@ -77,14 +70,14 @@ const AuthIframe = () => {
             </div>
             <div>
               <button
-                onClick={() => setShowAuthDialog(false)}
+                onClick={() => setDialogToShow(null)}
                 className="px-4 py-1.5 rounded-md bg-[#3a3a3c] text-white text-sm font-normal cursor-pointer">
                 Cancel
               </button>
             </div>
           </div>
           <iframe
-            src={chrome.runtime.getURL("tabs/auth-iframe.html")}
+            src={`${chrome.runtime.getURL("tabs/auth-iframe.html")}?id=${instanceId}`}
             sandbox="allow-scripts allow-same-origin allow-forms"
           />
         </div>

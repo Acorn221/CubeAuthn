@@ -13,6 +13,10 @@ export interface InboundMessages {
     request: { id: string }
     response: { data: string[] }
   }
+  iframeReady: {
+    request: { id: string }
+    response: {}
+  }
 }
 
 export interface OutboundMessages {
@@ -28,11 +32,15 @@ export interface OutboundMessages {
     request: {}
     response: { result: boolean } // using string bc it's a big number
   }
+  openDialog: {
+    request: { type: "register" | "auth", id: string },
+    response: { origin: string }
+  }
   registerDialog: {
     request: {
       publicKey: PublicKeyCredentialCreationOptionsSerialized
     }
-    response: {}
+    response: { origin: string; }
   }
   authDialog: {
     request: {
