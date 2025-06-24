@@ -51,6 +51,19 @@
     "permissions": [
       "nativeMessaging",
       "tabs"
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://* chrome-extension://*; frame-ancestors https://*"
+    },
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "tabs/auth-iframe.*"
+        ],
+        "matches": [
+          "<all_urls>"
+        ]
+      }
     ]
   }
 }
