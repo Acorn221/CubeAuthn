@@ -31,9 +31,14 @@ const AuthIframe = () => {
     initPortClient({ timeout: 1000 * 60 * 15 }).catch((error) => {
       console.error("Failed to initialize port client in UI component:", error)
     });
-		// TODO: GET THE ID FROM THE QUERY PARAMS
-		const id = window.location.search;
-		sendReady({ id: });
+		// Get the ID from the query params
+		const urlParams = new URLSearchParams(window.location.search);
+		const id = urlParams.get('id');
+    if (!id) {
+      console.error("No ID provided in the URL query parameters.");
+      return;
+    }
+		sendReady({ id });
   }, [])
 
   useMessageHandler(
@@ -51,11 +56,22 @@ const AuthIframe = () => {
       await btCube.init(macAddress)
     }
     void shizz()
-  }, [])
+  }, []);
+
+  const connect = useCallback(async () => {
+    const btCube = new BTCube()
+    try {
+      await btCube.init(macAddress)
+    } catch (error) {
+      console.error("Failed to connect to the Bluetooth cube:", error);
+      return false;
+    }
+    return true;
+  }, [macAddress]);
 
   // TODO: SETUP A LISTENER FOR A MESSAGE FROM THE BG TO TELL US WHAT WE NEED TO DO
 
-  return <div>HI</div>
+  return <div onClick={connect}>HI</div>
 }
 
 export default AuthIframe

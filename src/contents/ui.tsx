@@ -35,7 +35,7 @@ export const getStyle = (): HTMLStyleElement => {
 }
 
 const AuthIframe = () => {
-  const [dialogToShow, setDialogToShow] = useState<"register" | "auth" | null>("auth");
+  const [dialogToShow, setDialogToShow] = useState<"register" | "auth" | null>(null);
   const [instanceId, setInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,8 +77,9 @@ const AuthIframe = () => {
             </div>
           </div>
           <iframe
-            src={`${chrome.runtime.getURL("tabs/auth-iframe.html")}?id=${instanceId}`}
+            src={`${chrome.runtime.getURL("tabs/auth-iframe.html")}?id=${encodeURIComponent(instanceId)}&dialog=${encodeURIComponent(dialogToShow)}`}
             sandbox="allow-scripts allow-same-origin allow-forms"
+            allow="bluetooth"
           />
         </div>
       </div>
