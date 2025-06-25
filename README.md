@@ -29,8 +29,13 @@ Star the repo, send in a PR and add me on [LinkedIn](https://www.linkedin.com/in
 - [x] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
 - [x] Setup the authentication to actually work
 - [x] Fix state management so when we re-register the cube is correctly displayed
-- [ ] Make sure we set the secret to undefined when the user chooses to do so
+- [x] Have a random UUID generated for each request from bg -> cs/tab so we don't get confused with multiple requests
 - [ ] Use an Iframe to display a tab page which handles the connection to the cube
+	- Using an Iframe will require the user to click an extra button, but will not show the user that the extension is trying to connect to the cube - worse UX for no greater security.
+	- Sidebars CANNOT be used practically either as they cannot be opened upon navigator.credentials.{create, get} functions being called
+	- The only solution here would be to open a popup window/new tab to let the user authenticate with the cube.
 - [ ] Have an option to use a virtual cube (for testing)
 - [ ] Add a timeout timer so we don't overrun the given timeout from the site
 - [ ] Make a WASM script to brute force the MAC address on onboarding
+- [ ] Make sure we set the secret to undefined when the user chooses to do so
+- [ ] Allow the user to encrypt the secret with a device passkey as an extra layer of security
