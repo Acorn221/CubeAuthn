@@ -6,7 +6,10 @@ import type {
   HandleRegisterRequest,
   HandleRegisterResponse
 } from "@/background/messages/handleRegister"
-import type { PublicKeyCredentialCreationOptionsSerialized, PublicKeyCredentialRequestOptionsSerialized } from "@/background/types"
+import type {
+  PublicKeyCredentialCreationOptionsSerialized,
+  PublicKeyCredentialRequestOptionsSerialized
+} from "@/background/types"
 import type { PlasmoCSConfig } from "plasmo"
 
 import { sendToBackgroundViaRelay } from "@plasmohq/messaging"
@@ -23,54 +26,66 @@ export const config: PlasmoCSConfig = {
  * @param credentialData - The serialized credential data from the background script
  * @returns A WebAuthn-compatible credential object
  */
+/**
+ * Converts a serialized credential back to a proper WebAuthn PublicKeyCredential
+ *
+ * @param credentialData - The serialized credential data from the background script
+ * @returns A WebAuthn-compatible credential object
+ */
 function createWebAuthnCredential(credentialData: any): any {
-  const rawIdBuffer = new Uint8Array(credentialData.rawId).buffer
+  // Safely extract top-level properties with fallbacks
+  const id = credentialData.id
+  const rawId = credentialData.rawId || []
+  const authenticatorAttachment = credentialData.authenticatorAttachment
+  const responseData = credentialData.response || {}
 
+  console.log("TRANSPORTS CRED DATA", credentialData.transports);
+
+  // Create buffer from rawId
+  const rawIdBuffer = new Uint8Array(rawId).buffer
+
+  // Create the response object with proper buffer conversions and fallbacks
   const response: any = {
-    clientDataJSON: new Uint8Array(credentialData.response.clientDataJSON).buffer
+    // Handle buffer conversions safely
+    authenticatorData: responseData.authenticatorData
+      ? new Uint8Array(responseData.authenticatorData).buffer
+      : null,
+
+    attestationObject: responseData.attestationObject
+      ? new Uint8Array(responseData.attestationObject).buffer
+      : null,
+
+    signature: responseData.signature
+      ? new Uint8Array(responseData.signature).buffer
+      : null,
+
+    // clientDataJSON should always be present
+    clientDataJSON: responseData.clientDataJSON
+      ? new Uint8Array(responseData.clientDataJSON).buffer
+      : new Uint8Array([]).buffer
   }
 
-  // Add attestationObject for registration responses
-  if (credentialData.response.attestationObject) {
-    response.attestationObject = new Uint8Array(
-      credentialData.response.attestationObject
-    ).buffer
+  // Add userHandle if present
+  if (responseData.userHandle !== undefined) {
+    response.userHandle = responseData.userHandle
+      ? new Uint8Array(responseData.userHandle).buffer
+      : null
   }
 
-  // Add authenticatorData for authentication responses
-  if (credentialData.response.authenticatorData) {
-    response.authenticatorData = new Uint8Array(
-      credentialData.response.authenticatorData
-    ).buffer
-  }
-
-  if (credentialData.response.signature) {
-    response.signature = new Uint8Array(
-      credentialData.response.signature
-    ).buffer
-  }
-
-  if (credentialData.response.userHandle !== undefined) {
-    response.userHandle = credentialData.response.userHandle ?
-      new Uint8Array(credentialData.response.userHandle).buffer : null
-  }
-  
-  if (credentialData.response.transports) {
-    response.transports = credentialData.response.transports
-  }
-
-  const credential = {
-    id: credentialData.id,
+  // Return the complete credential object
+  return {
+    authenticatorAttachment: authenticatorAttachment || null,
+    id,
     type: "public-key",
     rawId: rawIdBuffer,
     response,
-
+    clientExtensionResults: credentialData.clientExtensionResults || {"credProps": {"rk": true}},
+    ...(credentialData.response.transports && { transports: credentialData.response.transports }),
     getClientExtensionResults() {
-      return {}
-    }
+      return credentialData.clientExtensionResults || {"credProps": {"rk": true}}
+    },
+    publicKeyAlgorithm: responseData.publicKeyAlgorithm || null,
   }
-
-  return credential
 }
 
 // Store references to the original WebAuthn methods
@@ -109,7 +124,7 @@ navigator.credentials.create = async function (
             )
           )
         }
-      };
+      }
 
       const res = await sendToBackgroundViaRelay<
         HandleRegisterRequest,

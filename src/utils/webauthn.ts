@@ -39,13 +39,6 @@ export const createFakeCredentialIntercept = async ({
 	// Generate key pair from cube state
 	const { credId, naclKeyPair, credIdString } = await generateKeyPairFromCube(cubeNum, secret);
 
-	// const { credIdString: credId2, naclKeyPair: keyPair2 } = await generateKeyPairFromCube(cubeNum, secret, credIdString);
-
-	// console.log(`Keypair 1 ${credIdString} keypair 2: ${credId2}`);
-	// console.log("1", naclKeyPair);
-	// console.log("2", keyPair2);
-
-
 	// Create a custom COSE key from the nacl public key
 	// TweetNaCl uses Ed25519, so we should use that curve identifier
 	const coseMap = new Map<number, number | Uint8Array>([
@@ -63,8 +56,13 @@ export const createFakeCredentialIntercept = async ({
 	)
 	const flags = Uint8Array.of(0x41) // user present + attested credential data
 	const signCount = Uint8Array.of(0, 0, 0, 0)
-	const aaguid = new Uint8Array(16)
 	const credIdLen = Uint8Array.of(credId.length >> 8, credId.length & 0xff)
+
+	// nicking chrome's AAGUID 
+	// From: https://passkeydeveloper.github.io/passkey-authenticator-aaguids/explorer/
+	const aaguidString = "adce0002-35bc-c60a-648b-0b25f1f05503";
+	const aaguid = new Uint8Array([...aaguidString.replace(/-/g, '').match(/.{2}/g)].map(hex => parseInt(hex, 16)));
+
 
 	const authData = new Uint8Array([
 		...rpIdHash,
@@ -74,7 +72,7 @@ export const createFakeCredentialIntercept = async ({
 		...credIdLen,
 		...credId,
 		...coseKey
-	])
+	]);
 
 	// Create client data JSON
 	const clientDataJSON = new TextEncoder().encode(
@@ -82,7 +80,9 @@ export const createFakeCredentialIntercept = async ({
 			type: "webauthn.create",
 			challenge: b64url.encode(challenge),
 			origin,
-			crossOrigin: false
+			crossOrigin: false,
+			// Keeping this in to make it look the same as Chrome's output
+      "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex",
 		})
 	)
 
@@ -104,10 +104,16 @@ export const createFakeCredentialIntercept = async ({
 			type: "public-key",
 			rawId: Array.from(credId),
 			id: b64url.encode(credId),
+			transports: ["hybrid", "internal"], // Set default transport to internal for platform authenticator
 			response: {
 				clientDataJSON: Array.from(clientDataJSON),
 				attestationObject: Array.from(attestationObject),
-				transports: ["internal"] // Set default transport to internal for platform authenticator
+			},
+			authenticatorAttachment: "platform",
+			clientExtensionResults: {
+				credProps: {
+					rk: true
+				}
 			}
 		},
 		credId,
