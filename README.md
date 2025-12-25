@@ -4,13 +4,16 @@
 
 CubeAuthn transforms a Bluetooth-enabled Rubik's cube into a WebAuthn-compatible authenticator by using the cube's physical state to deterministically generate cryptographic keypairs for passkeys.
 
+[Here's the link to the paper](https://ieeexplore.ieee.org/document/11280260) 
+
 > [!Note]
 > Check out the [demo video](https://www.youtube.com/watch?v=-q8KRX0P9gE) to see it in action or [get it here](https://chromewebstore.google.com/detail/cubeauthn/koncigmbjmoapojihipbpfnmgkhmdlfl) on the Chrome Web Store!
 
 > [!WARNING]
-> This is a proof-of-concept implementation. Currently only supports the GAN 356 i3 smart cube.
+> This is a proof-of-concept implementation. Currently only supports the GAN 356 i3 smart cube and this implementation is not secure and cannot be made secur with the current firmware of the GAN365 i3 as it broadcasts weakly encrypted messages, including the cube state, along with other issues which make it not practical for real world use.
 
 [<img src="https://i.ytimg.com/vi/-q8KRX0P9gE/maxresdefault.jpg" width="100%">](https://www.youtube.com/watch?v=-q8KRX0P9gE "CubeAuthn Demo")
+
 
 ## Overview
 
@@ -55,19 +58,17 @@ CubeAuthn explores a different approach to authentication security:
 
 Star the repo, submit PRs, and connect on [LinkedIn](https://www.linkedin.com/in/acorn221/)!
 
-## TODO:
-- [x] Tell the user if their mac address isn't setup in the overlay
-- [x] Setup the key gen properly, generate a random id with each key that is generated - this can be hashed with the secret+cubeNum to generate the private key
-- [x] Setup the key decoding on for the authentication - calculating the private key from hashing the secret with the given cube number
-- [x] Setup the authentication to actually work
-- [x] Fix state management so when we re-register the cube is correctly displayed
-- [x] Have a random UUID generated for each request from bg -> cs/tab so we don't get confused with multiple requests
-- [ ] Use an Iframe to display a tab page which handles the connection to the cube
-	- Using an Iframe will require the user to click an extra button, but will not show the user that the extension is trying to connect to the cube - worse UX for no greater security.
-	- Sidebars CANNOT be used practically either as they cannot be opened upon navigator.credentials.{create, get} functions being called
-	- The only solution here would be to open a popup window/new tab to let the user authenticate with the cube.
-- [ ] Have an option to use a virtual cube (for testing)
-- [ ] Add a timeout timer so we don't overrun the given timeout from the site
-- [ ] Make a WASM script to brute force the MAC address on onboarding
-- [ ] Make sure we set the secret to undefined when the user chooses to do so
-- [ ] Allow the user to encrypt the secret with a device passkey as an extra layer of security
+## Cite the paper
+
+```LaTeX
+@INPROCEEDINGS{11280260,
+  author={Arnott, James and Zhang, Li},
+  booktitle={2025 International Conference on Machine Learning and Cybernetics (ICMLC)}, 
+  title={From Puzzle to Passkey: Physical Authentication Through Rubik’s Cube Scrambles}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={522-527},
+  keywords={Bluetooth;Authentication;Transforms;Machine learning;Vectors;Browsers;Cryptography;System analysis and design;Standards;Faces;Passkey;FIDO;WebAuthn;Rubik's Cube;Physical Authentication;Deterministic Key Generation},
+  doi={10.1109/ICMLC66258.2025.11280260}}
+```
