@@ -10,7 +10,7 @@ CubeAuthn transforms a Bluetooth-enabled Rubik's cube into a WebAuthn-compatible
 > Check out the [demo video](https://www.youtube.com/watch?v=-q8KRX0P9gE) to see it in action or [get it here](https://chromewebstore.google.com/detail/cubeauthn/koncigmbjmoapojihipbpfnmgkhmdlfl) on the Chrome Web Store!
 
 > [!WARNING]
-> This is a proof-of-concept implementation. Currently only supports the GAN 356 i3 smart cube and this implementation is not secure and cannot be made secur with the current firmware of the GAN365 i3 as it broadcasts weakly encrypted messages, including the cube state, along with other issues which make it not practical for real world use.
+> This is a proof-of-concept implementation. Currently only supports the GAN 356 i3 smart cube and this implementation is not secure and cannot be made secure with the current firmware of the GAN365 i3 as it broadcasts weakly encrypted messages, including the cube state, along with other issues which make it not practical for real world use.
 
 [<img src="https://i.ytimg.com/vi/-q8KRX0P9gE/maxresdefault.jpg" width="100%">](https://www.youtube.com/watch?v=-q8KRX0P9gE "CubeAuthn Demo")
 
